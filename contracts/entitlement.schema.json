@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://treasureskinsradar.local/contracts/entitlement.schema.json",
+  "title": "Treasure Skins Radar Entitlement",
+  "type": "object",
+  "required": ["plan", "locked_opportunity_count"],
+  "properties": {
+    "plan": {"enum": ["FREE", "PRO"]},
+    "locked_opportunity_count": {"type": "integer", "minimum": 0},
+    "limits": {
+      "type": "object",
+      "description": "Server-driven limits. Exact quotas are intentionally not defined by the extension.",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
