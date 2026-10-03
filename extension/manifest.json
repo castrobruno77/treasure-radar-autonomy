@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Treasure Skins Radar",
+  "version": "0.0.1",
+  "description": "Detecte oportunidades robustas de inputs raros para trade-ups de CS2.",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["storage", "notifications"],
+  "host_permissions": []
+}
