@@ -11,7 +11,7 @@ export function validateOpportunityPayload(payload) {
     if (typeof item.id !== "string" || typeof item.source !== "string" ||
         typeof item.collection !== "string" || typeof item.rarity !== "string" ||
         typeof item.market_hash_name !== "string" || !Number.isFinite(item.price_usd) ||
-        typeof item.captured_at !== "string") {
+        item.price_usd <= 0 || typeof item.captured_at !== "string" || !Number.isFinite(Date.parse(item.captured_at))) {
       throw new Error("RADAR_API_INVALID_PAYLOAD");
     }
   }

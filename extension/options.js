@@ -1,17 +1,7 @@
+import { normalizeEndpoint } from './endpoint.js';
 const form = document.getElementById("settings-form");
 const input = document.getElementById("api-endpoint");
 const message = document.getElementById("message");
-
-function normalizeEndpoint(value) {
-  const url = new URL(value.trim());
-  if (url.protocol !== "https:") {
-    throw new Error("HTTPS_REQUIRED");
-  }
-  url.pathname = url.pathname.replace(/\/$/, "");
-  url.search = "";
-  url.hash = "";
-  return url.toString().replace(/\/$/, "");
-}
 
 async function load() {
   const stored = await chrome.storage.local.get(["tsrApiEndpoint"]);
@@ -22,11 +12,13 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     const endpoint = normalizeEndpoint(input.value);
+    const granted = await chrome.permissions.request({ origins: [`${endpoint}/*`] });
+    if (!granted) throw new Error('PERMISSION_REQUIRED');
     await chrome.storage.local.set({ tsrApiEndpoint: endpoint });
     input.value = endpoint;
     message.textContent = "Endpoint salvo.";
   } catch {
-    message.textContent = "Informe um endpoint HTTPS válido.";
+    message.textContent = "Informe a origem HTTPS da API ou http://127.0.0.1:8787 para o piloto local e permita o acesso.";
   }
 });
 
