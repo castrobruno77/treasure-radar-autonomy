@@ -1,14 +1,17 @@
+import { certifiedOpportunities } from "./api.js";
+
 export function renderOpportunities(container, payload) {
   container.replaceChildren();
+  const items = certifiedOpportunities(payload);
 
-  if (!payload.items.length) {
+  if (!items.length) {
     const empty = document.createElement("p");
     empty.textContent = "Nenhuma oportunidade certificada disponível agora.";
     container.appendChild(empty);
     return;
   }
 
-  for (const item of payload.items) {
+  for (const item of items) {
     const card = document.createElement("article");
     card.className = "opportunity";
 
@@ -20,7 +23,6 @@ export function renderOpportunities(container, payload) {
       ? ` • gap ${Number(item.robust_gap_pct).toFixed(1)}%`
       : "";
     meta.textContent = `${item.source} • US$${Number(item.price_usd).toFixed(2)}${gap}`;
-
     card.append(title, meta);
 
     if (item.listing_url) {
@@ -31,7 +33,6 @@ export function renderOpportunities(container, payload) {
       link.textContent = "Abrir listing";
       card.appendChild(link);
     }
-
     container.appendChild(card);
   }
 }
