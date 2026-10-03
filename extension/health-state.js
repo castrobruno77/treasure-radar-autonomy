@@ -9,12 +9,12 @@ export function deriveHealthState({
   if (!endpointConfigured) return { state: "NOT_CONFIGURED", freshnessSeconds: null };
   if (error) return { state: "ERROR", freshnessSeconds: null };
 
-  const freshness = Number(payload?.freshness_seconds);
-  if (!Number.isFinite(freshness)) {
+  const freshness = payload?.freshness_seconds;
+  if (!Number.isFinite(freshness) || freshness < 0) {
     return { state: "STALE", freshnessSeconds: null };
   }
 
-  if (freshness > staleAfterSeconds) {
+  if (payload?.status === 'STALE' || freshness > staleAfterSeconds) {
     return { state: "STALE", freshnessSeconds: freshness };
   }
 

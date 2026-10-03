@@ -20,7 +20,34 @@ Produto provisório focado em detectar inputs raros/subprecificados para trade-u
 Mudanças reversíveis, sem custo, sem nova credencial e dentro do escopo aprovado podem avançar autonomamente com teste, validação e rollback.
 
 ## Estado
-Bootstrap técnico inicial em andamento.
+Bootstrap concluído. Piloto local com coleta real DMarket, API própria, snapshot persistente e cliente da extensão integrados. Steam login e publicação remota ainda não estão habilitados.
+
+## Executar o piloto (Node 22 ou superior)
+
+Na pasta do repositório:
+
+```sh
+node scripts/collect-once.mjs
+node backend/server.mjs
+```
+
+Carregue a pasta `extension` como extensão descompactada em Chrome/Edge. Em Configurações, salve `http://127.0.0.1:8787` e aceite acesso a esse endereço. Abra o popup para consultar o último scan. A coleta é explícita e limitada a 10 consultas; abrir o popup não aciona novas consultas de mercado. Repita o primeiro comando para atualizar (intervalo mínimo de 60 segundos). Após 300 segundos os dados aparecem como antigos.
+
+O piloto só escuta em `127.0.0.1`. Não publique esse servidor por túnel/proxy: autenticação Steam ainda não foi implementada. Nenhum segredo de mercado é necessário localmente; a coleta reutiliza o runtime Deno existente, sem alterá-lo. A certificação preserva a regra do comparador legado; não confirma elegibilidade de Souvenir para trade-up nem garante disponibilidade/execução da compra.
+
+O snapshot fica em `.data/latest.json` e sobrevive a reinícios. `TSR_DATA_DIR` permite escolher outra pasta local. O arquivo `collection.lock` impede coletores concorrentes; após interrupção abrupta, confira que o processo acabou antes de remover somente esse arquivo. O histórico completo e Supabase permanecem pendentes. Não há scheduler novo, billing ou auto-buy.
+
+## Validação e próximos passos
+
+```sh
+node scripts/validate.mjs
+node tests/options.test.mjs
+node tests/opportunity-contract.test.mjs
+node tests/health-state.test.mjs
+node --test tests/backend.test.mjs
+```
+
+Veja [evidências e gates](docs/phase-1-evidence.md), [Steam auth](docs/steam-auth.md) e [backlog](docs/backlog.md).
 
 
 ## Continuity / recovery

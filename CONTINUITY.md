@@ -28,7 +28,23 @@ Initial safe bootstrap backlog is complete:
 - #6 ONLINE / STALE / ERROR / NOT_CONFIGURED — complete
 - #7 Free/Pro entitlement contract scaffold — complete
 
-At this checkpoint, no initial `[AUTO]` backlog remains.
+The initial backlog is complete. Phase 1 now provides a **local real-data pilot**, not an authenticated remote MVP.
+
+## Phase 1 checkpoint — 2026-10-03
+
+- Own `/v1/opportunities` API, bounded DMarket OPS045 adapter, atomic restart-safe local snapshot and real extension client integration implemented on `feature/radar-next-phase`.
+- Live collector completed: 53 candidates, 1 legacy-certified signal. Scans restricted to DMarket / The 2021 Mirage Collection / Consumer Grade, 10 jobs. No comparator threshold changes. Partial/error collection is rejected, previous snapshot retained, age never reset by reads.
+- Loopback-only server and explicit one-shot collector; README contains two commands and extension setup. No cloud scheduler/deploy was added. Native Chrome/Edge popup installation remains unverified.
+- The legacy signal includes Souvenir. Pilot warning is visible; trade-up eligibility has not been revalidated. No actionable-production claim, no fabricated listing URL.
+- Supabase `tsr_*` absent by readback. Migration refused once with read-only transaction 25006; proposal retained in `docs/tsr-schema-proposal.sql`. No bypass. Local storage is NOT operational Supabase.
+- CS.Deals/Waxpeer probes HTTP 200 with price/float; VALIDATING and excluded from feed. CSFloat bounded public read HTTP 403; BLOCKED, no retries/bypass.
+- Steam authentication architecture is in `docs/steam-auth.md`; routes fail closed with 503 until implemented. Basic OpenID is distinct from optional key-requiring Steam APIs.
+- Issues #13/#15 track this implementation; #14 is the database-write gate; #16 is authenticated zero-cost deployment. See `docs/backlog.md` and `docs/phase-1-evidence.md` for acceptance, limits and source references.
+- Health Watch run 37147497542 succeeded; direct legacy health confirmed expected revision. Initial recovery found no open PRs/issues.
+- Auto Dev/Fallback/Continuity Sync view calls rendered cards but exposed no current enabled state to the agent; runtime status is UNVERIFIED. Historical Drive state was enabled. Do not claim current automation execution or create duplicates from this evidence.
+- Last known pre-change healthy main: `39517446f4ea80eac27202f916205d8283e5cf6c`. Release promotion requires exact-head CI and PR merge; inspect GitHub for final merge SHA instead of self-referential commit IDs.
+
+Rollback: revert this phase's PR and stop the local server; preserve `.data/latest.json`. Existing Deno runtime and database are unchanged. Do not drop data or downgrade unrelated work.
 
 ## Runtime
 
@@ -46,6 +62,7 @@ Expected revision:
 - Treasure Radar Auto Dev: `6ac05608947881918a66e360dff18d61`
 - Treasure Radar Fallback: `6ac0982a6a208191b3cb1e94780c7112`
 - Treasure Radar Gate Watch: `6ac04f57003c8191a1a7a96e99642b12` (intentionally disabled at this checkpoint)
+- Treasure Continuity Sync: `6ac15096afbc8191a6cd7569133587c7` (historically every 6 hours; current state unverified)
 
 ## Safe autonomy rule
 
@@ -87,7 +104,7 @@ Bruno is required only for:
 
 ## Next bounded phase
 
-Create a safe backlog around:
+Continue the bounded backlog in `docs/backlog.md`:
 
 - real Radar API/backend integration
 - Treasure Skins Radar operational persistence under its own namespace

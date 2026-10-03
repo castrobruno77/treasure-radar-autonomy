@@ -2,6 +2,11 @@ import { certifiedOpportunities } from "./api.js";
 
 export function renderOpportunities(container, payload, { stale = false } = {}) {
   container.replaceChildren();
+  if (payload.pilot_notice) {
+    const notice = document.createElement('p');
+    notice.textContent = payload.pilot_notice;
+    container.appendChild(notice);
+  }
   const items = certifiedOpportunities(payload);
 
   if (!items.length) {
@@ -34,9 +39,14 @@ export function renderOpportunities(container, payload, { stale = false } = {}) 
       card.appendChild(staleLabel);
     }
 
-    if (item.listing_url) {
+    let safeListing = null;
+    try {
+      const url = new URL(item.listing_url);
+      if (url.protocol === 'https:' && !url.username && !url.password) safeListing = url.href;
+    } catch { /* Absent/invalid URLs have no action. */ }
+    if (safeListing) {
       const link = document.createElement("a");
-      link.href = item.listing_url;
+      link.href = safeListing;
       link.target = "_blank";
       link.rel = "noreferrer";
       link.textContent = "Abrir listing";
