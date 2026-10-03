@@ -1,0 +1,65 @@
+name: Radar Health Watch
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/radar-health-watch.yml"
+      - "scripts/check-radar-health.mjs"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    env:
+      RADAR_HEALTH_URL: https://scale-radar.scale-cs2.deno.net/health
+      EXPECTED_REVISION: OPS045_ROBUST_COMPARATOR_V1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check Radar production health
+        id: health
+        continue-on-error: true
+        run: node scripts/check-radar-health.mjs
+
+      - name: Open or refresh incident
+        if: steps.health.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="[AUTO] Treasure Radar production health failed"
+          EXISTING="$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number // empty')"
+          BODY="Automated health watch failed at $(date -u +%FT%TZ).
+
+          Expected revision: `$EXPECTED_REVISION`
+          Endpoint: `$RADAR_HEALTH_URL`
+          Workflow: `$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID`
+
+          State: HUMAN_GATE only if the failure persists or requires a production change."
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
+          exit 1
+
+      - name: Close recovered incident
+        if: steps.health.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="[AUTO] Treasure Radar production health failed"
+          EXISTING="$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "Health recovered automatically at $(date -u +%FT%TZ). Closing incident."
+            gh issue close "$EXISTING"
+          fi
