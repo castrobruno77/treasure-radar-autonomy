@@ -19,3 +19,5 @@ jobs:
           node scripts/validate.mjs
           node --check extension/popup.js
           node --check extension/background.js
+          node --check extension/options.js
+          node tests/options.test.mjs
