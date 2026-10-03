@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "bootstrap/**", "feature/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate extension scaffold
+        run: |
+          node scripts/validate.mjs
+          node --check extension/popup.js
+          node --check extension/background.js
