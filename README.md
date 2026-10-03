@@ -21,3 +21,8 @@ Mudanças reversíveis, sem custo, sem nova credencial e dentro do escopo aprova
 
 ## Estado
 Bootstrap técnico inicial em andamento.
+
+
+## Continuity / recovery
+
+If a chat or execution context is lost, start with [CONTINUITY.md](CONTINUITY.md). A copy-paste cold-start command is also available in [RECOVERY_PROMPT.txt](RECOVERY_PROMPT.txt).
