@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Treasure Skins Radar — Configurações</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Configurações</h1>
+      <span id="status">Defina o endpoint HTTPS do motor Radar.</span>
+    </header>
+    <form id="settings-form" class="card">
+      <label for="api-endpoint">Radar API endpoint</label>
+      <input id="api-endpoint" name="api-endpoint" type="url" inputmode="url" placeholder="https://example.supabase.co" required>
+      <button type="submit">Salvar</button>
+    </form>
+    <p id="message" role="status" aria-live="polite"></p>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>
