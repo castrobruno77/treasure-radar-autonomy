@@ -5,35 +5,17 @@ body {
   background: #0f1115;
   color: #f4f6f8;
 }
-
-main {
-  padding: 16px;
-}
-
-header {
-  display: grid;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-h1 {
-  margin: 0;
-  font-size: 18px;
-}
-
-#status {
-  font-size: 12px;
-  opacity: .72;
-}
-
-.card {
+main { padding: 16px; }
+header { display: grid; gap: 6px; margin-bottom: 14px; }
+h1 { margin: 0; font-size: 18px; }
+#status { font-size: 12px; opacity: .72; }
+.card, .opportunity {
   border: 1px solid #2b313b;
   border-radius: 12px;
   padding: 12px;
   background: #171b21;
 }
-
-.card p {
-  margin-bottom: 0;
-  line-height: 1.4;
-}
+.card { margin-bottom: 10px; }
+.card p, .opportunity p { margin-bottom: 0; line-height: 1.4; }
+.opportunity { margin-top: 10px; }
+.opportunity a { display: inline-block; margin-top: 10px; }
