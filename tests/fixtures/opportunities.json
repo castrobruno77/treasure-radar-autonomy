@@ -1,0 +1,38 @@
+{
+  "status": "OK",
+  "generated_at": "2026-10-03T00:00:00Z",
+  "freshness_seconds": 15,
+  "items": [
+    {
+      "id": "cert-1",
+      "source": "fixture-market",
+      "collection": "Ancient",
+      "rarity": "Consumer",
+      "market_hash_name": "Certified Input",
+      "price_usd": 1.25,
+      "captured_at": "2026-10-03T00:00:00Z",
+      "status": "CERTIFIED",
+      "listing_url": "https://example.invalid/cert"
+    },
+    {
+      "id": "reject-1",
+      "source": "fixture-market",
+      "collection": "Ancient",
+      "rarity": "Consumer",
+      "market_hash_name": "Rejected Input",
+      "price_usd": 2.25,
+      "captured_at": "2026-10-03T00:00:00Z",
+      "status": "REJECTED"
+    },
+    {
+      "id": "insufficient-1",
+      "source": "fixture-market",
+      "collection": "Ancient",
+      "rarity": "Consumer",
+      "market_hash_name": "Insufficient Input",
+      "price_usd": 3.25,
+      "captured_at": "2026-10-03T00:00:00Z",
+      "status": "INSUFFICIENT"
+    }
+  ]
+}
