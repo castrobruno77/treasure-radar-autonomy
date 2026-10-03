@@ -22,3 +22,4 @@ jobs:
           node --check extension/options.js
           node tests/options.test.mjs
           node tests/opportunity-contract.test.mjs
+          node tests/health-state.test.mjs

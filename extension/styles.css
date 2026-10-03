@@ -19,3 +19,7 @@ h1 { margin: 0; font-size: 18px; }
 .card p, .opportunity p { margin-bottom: 0; line-height: 1.4; }
 .opportunity { margin-top: 10px; }
 .opportunity a { display: inline-block; margin-top: 10px; }
+
+#status[data-state="STALE"],
+.stale-label { font-weight: 600; }
+.opportunity.stale { opacity: .78; }

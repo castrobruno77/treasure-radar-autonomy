@@ -1,19 +1,21 @@
 import { certifiedOpportunities } from "./api.js";
 
-export function renderOpportunities(container, payload) {
+export function renderOpportunities(container, payload, { stale = false } = {}) {
   container.replaceChildren();
   const items = certifiedOpportunities(payload);
 
   if (!items.length) {
     const empty = document.createElement("p");
-    empty.textContent = "Nenhuma oportunidade certificada disponível agora.";
+    empty.textContent = stale
+      ? "Sem oportunidade certificada fresca; dados atuais estão marcados como antigos."
+      : "Nenhuma oportunidade certificada disponível agora.";
     container.appendChild(empty);
     return;
   }
 
   for (const item of items) {
     const card = document.createElement("article");
-    card.className = "opportunity";
+    card.className = stale ? "opportunity stale" : "opportunity";
 
     const title = document.createElement("strong");
     title.textContent = item.market_hash_name;
@@ -24,6 +26,13 @@ export function renderOpportunities(container, payload) {
       : "";
     meta.textContent = `${item.source} • US$${Number(item.price_usd).toFixed(2)}${gap}`;
     card.append(title, meta);
+
+    if (stale) {
+      const staleLabel = document.createElement("p");
+      staleLabel.className = "stale-label";
+      staleLabel.textContent = "Dados antigos — confirme a listagem antes de agir.";
+      card.appendChild(staleLabel);
+    }
 
     if (item.listing_url) {
       const link = document.createElement("a");
