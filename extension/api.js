@@ -1,3 +1,28 @@
+export function validateOpportunityPayload(payload) {
+  if (!payload || typeof payload !== "object" || !Array.isArray(payload.items)) {
+    throw new Error("RADAR_API_INVALID_PAYLOAD");
+  }
+
+  for (const item of payload.items) {
+    if (!item || typeof item !== "object") throw new Error("RADAR_API_INVALID_PAYLOAD");
+    if (!["CERTIFIED", "REJECTED", "INSUFFICIENT"].includes(item.status)) {
+      throw new Error("RADAR_API_INVALID_PAYLOAD");
+    }
+    if (typeof item.id !== "string" || typeof item.source !== "string" ||
+        typeof item.collection !== "string" || typeof item.rarity !== "string" ||
+        typeof item.market_hash_name !== "string" || !Number.isFinite(item.price_usd) ||
+        typeof item.captured_at !== "string") {
+      throw new Error("RADAR_API_INVALID_PAYLOAD");
+    }
+  }
+  return payload;
+}
+
+export function certifiedOpportunities(payload) {
+  validateOpportunityPayload(payload);
+  return payload.items.filter((item) => item.status === "CERTIFIED");
+}
+
 export async function fetchOpportunities({ endpoint, limit = 20, since } = {}) {
   if (!endpoint) {
     return {
@@ -18,14 +43,6 @@ export async function fetchOpportunities({ endpoint, limit = 20, since } = {}) {
     signal: AbortSignal.timeout(10000)
   });
 
-  if (!response.ok) {
-    throw new Error(`RADAR_API_HTTP_${response.status}`);
-  }
-
-  const payload = await response.json();
-  if (!payload || !Array.isArray(payload.items)) {
-    throw new Error("RADAR_API_INVALID_PAYLOAD");
-  }
-
-  return payload;
+  if (!response.ok) throw new Error(`RADAR_API_HTTP_${response.status}`);
+  return validateOpportunityPayload(await response.json());
 }
