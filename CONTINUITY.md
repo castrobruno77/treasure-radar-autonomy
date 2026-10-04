@@ -12,7 +12,7 @@ Open a new chat in the **Corporação** project and send:
 
 - **Drive:** human canonical documentation.
 - **GitHub:** code, versions, CI, PRs and rollback.
-- **Supabase:** intended operational state; verify write capability before assuming `tsr_*` persistence exists.
+- **Supabase:** operational persistence state. Gate #14 is technically unblocked through validated `public.tsr_runs`; verify observable evidence before claiming broader `tsr_*` coverage.
 - **ChatGPT Project:** context and specialists; not authoritative state.
 
 Drive folder: `TREASURE SKINS RADAR`  
@@ -36,10 +36,10 @@ The initial backlog is complete. Phase 1 now provides a **local real-data pilot*
 - Live collector completed: 53 candidates, 1 legacy-certified signal. Scans restricted to DMarket / The 2021 Mirage Collection / Consumer Grade, 10 jobs. No comparator threshold changes. Partial/error collection is rejected, previous snapshot retained, age never reset by reads.
 - Loopback-only server and explicit one-shot collector; README contains two commands and extension setup. No cloud scheduler/deploy was added. Native Chrome/Edge popup installation remains unverified.
 - The legacy signal includes Souvenir. Pilot warning is visible; trade-up eligibility has not been revalidated. No actionable-production claim, no fabricated listing URL.
-- Supabase `tsr_*` absent by readback. Migration refused once with read-only transaction 25006; proposal retained in `docs/tsr-schema-proposal.sql`. No bypass. Local storage is NOT operational Supabase.
+- Supabase update: the earlier read-only transaction 25006 was traced to storage pressure from legacy SCALE data. With Bruno's explicit authorization, `market_catalog_l0_history` (~1.087 GB / 4.3M rows) was cleared while `market_listing_detail_current` (~400 MB) was preserved. Database usage fell from ~1.5 GB to ~486 MB. Migration then succeeded for `public.tsr_runs`; RLS is enabled, anon/authenticated have no SELECT/INSERT, service_role has SELECT/INSERT, and a write/read test succeeded with the test row removed. Gate #14 is technically UNBLOCKED. Local snapshot remains fallback until backend integration with `tsr_runs` is completed.
 - CS.Deals/Waxpeer probes HTTP 200 with price/float; VALIDATING and excluded from feed. CSFloat bounded public read HTTP 403; BLOCKED, no retries/bypass.
 - Steam authentication architecture is in `docs/steam-auth.md`; routes fail closed with 503 until implemented. Basic OpenID is distinct from optional key-requiring Steam APIs.
-- Issues #13/#15 track this implementation; #14 is the database-write gate; #16 is authenticated zero-cost deployment. See `docs/backlog.md` and `docs/phase-1-evidence.md` for acceptance, limits and source references.
+- Issues #13/#15 track the merged phase-1 implementation. Gate #14 (authorized database writes) is technically UNBLOCKED through validated `public.tsr_runs`. The next safe persistence step is backend integration with `tsr_runs`, keeping the local snapshot as fallback. #16 remains the authenticated zero-cost remote-promotion gate. See `docs/backlog.md` and `docs/phase-1-evidence.md` for acceptance, limits and source references.
 - Health Watch run 37147497542 succeeded; direct legacy health confirmed expected revision. Initial recovery found no open PRs/issues.
 - Auto Dev/Fallback/Continuity Sync view calls rendered cards but exposed no current enabled state to the agent; runtime status is UNVERIFIED. Historical Drive state was enabled. Do not claim current automation execution or create duplicates from this evidence.
 - Last known pre-change healthy main: `39517446f4ea80eac27202f916205d8283e5cf6c`. Release promotion requires exact-head CI and PR merge; inspect GitHub for final merge SHA instead of self-referential commit IDs.
@@ -97,7 +97,7 @@ Bruno is required only for:
 4. Inspect open `[AUTO]` issues and open PRs.
 5. Verify Auto Dev and Fallback are enabled.
 6. Verify no open automatic health incident exists.
-7. Verify Supabase write capability before claiming `tsr_*` persistence exists.
+7. Verify current Supabase persistence state before claiming broader `tsr_*` coverage; `public.tsr_runs` is already validated, but additional tables/schema still require observable verification.
 8. Resume any unfinished branch/PR instead of creating a duplicate.
 9. If backlog is empty, create the next bounded safe backlog.
 10. Preserve ZERO COST MODE.
@@ -107,7 +107,7 @@ Bruno is required only for:
 Continue the bounded backlog in `docs/backlog.md`:
 
 - real Radar API/backend integration
-- Treasure Skins Radar operational persistence under its own namespace
+- integrate backend persistence with validated `public.tsr_runs`, retaining local snapshot fallback until cutover is proven
 - real opportunity feed to the extension
 - reuse/validation of market sources
 - Steam authentication architecture up to any missing-credential gate
