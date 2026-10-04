@@ -41,8 +41,8 @@ The initial backlog is complete. Phase 1 now provides a **local real-data pilot*
 - Steam authentication architecture is in `docs/steam-auth.md`; routes fail closed with 503 until implemented. Basic OpenID is distinct from optional key-requiring Steam APIs.
 - Issues #13/#15 track the merged phase-1 implementation. Gate #14 (authorized database writes) is reconciled CLOSED/UNBLOCKED for validated `public.tsr_runs` only. Follow-on #21 `[AUTO] Integrate backend persistence with validated tsr_runs` tracks the next safe persistence step, keeping the local snapshot as fallback. #16 remains OPEN as the authenticated zero-cost remote-promotion gate. #18 and #19 remain preserved as independent bounded backlog items. See `docs/backlog.md` and `docs/phase-1-evidence.md` for acceptance, limits and source references.
 - Health Watch run 37147497542 succeeded; direct legacy health confirmed expected revision. Initial recovery found no open PRs/issues.
-- Auto Dev/Fallback/Continuity Sync view calls rendered cards but exposed no current enabled state to the agent; runtime status is UNVERIFIED. Historical Drive state was enabled. Do not claim current automation execution or create duplicates from this evidence.
-- Last known pre-change healthy main: `39517446f4ea80eac27202f916205d8283e5cf6c`. Release promotion requires exact-head CI and PR merge; inspect GitHub for final merge SHA instead of self-referential commit IDs.
+- Automation state directly verified on 2026-10-04: Treasure Radar Auto Dev is DISABLED; Treasure Radar Fallback is ENABLED; Treasure Continuity Sync is ENABLED. Do not infer the cause of Auto Dev being disabled from continuity data.
+- Current observable main before this continuity-only update: `558509db9e7b1174f26b75ad8226baed973d38e9` (continuity reconciliation #22). Release promotion still requires exact-head CI and PR merge.
 
 Rollback: revert this phase's PR and stop the local server; preserve `.data/latest.json`. Existing Deno runtime and database are unchanged. Do not drop data or downgrade unrelated work.
 
@@ -62,7 +62,7 @@ Expected revision:
 - Treasure Radar Auto Dev: `6ac05608947881918a66e360dff18d61`
 - Treasure Radar Fallback: `6ac0982a6a208191b3cb1e94780c7112`
 - Treasure Radar Gate Watch: `6ac04f57003c8191a1a7a96e99642b12` (intentionally disabled at this checkpoint)
-- Treasure Continuity Sync: `6ac15096afbc8191a6cd7569133587c7` (historically every 6 hours; current state unverified)
+- Treasure Continuity Sync: `6ac15096afbc8191a6cd7569133587c7` (ENABLED; every 6 hours, directly verified 2026-10-04)
 
 ## Safe autonomy rule
 
