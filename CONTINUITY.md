@@ -12,7 +12,7 @@ Open a new chat in the **Corporação** project and send:
 
 - **Drive:** human canonical documentation.
 - **GitHub:** code, versions, CI, PRs and rollback.
-- **Supabase:** operational persistence state. Gate #14 is technically unblocked through validated `public.tsr_runs`; verify observable evidence before claiming broader `tsr_*` coverage.
+- **Supabase:** operational persistence state. Gate #14 is reconciled and closed as technically unblocked through validated `public.tsr_runs`; verify observable evidence before claiming broader `tsr_*` coverage.
 - **ChatGPT Project:** context and specialists; not authoritative state.
 
 Drive folder: `TREASURE SKINS RADAR`  
@@ -39,7 +39,7 @@ The initial backlog is complete. Phase 1 now provides a **local real-data pilot*
 - Supabase update: the earlier read-only transaction 25006 was traced to storage pressure from legacy SCALE data. With Bruno's explicit authorization, `market_catalog_l0_history` (~1.087 GB / 4.3M rows) was cleared while `market_listing_detail_current` (~400 MB) was preserved. Database usage fell from ~1.5 GB to ~486 MB. Migration then succeeded for `public.tsr_runs`; RLS is enabled, anon/authenticated have no SELECT/INSERT, service_role has SELECT/INSERT, and a write/read test succeeded with the test row removed. Gate #14 is technically UNBLOCKED. Local snapshot remains fallback until backend integration with `tsr_runs` is completed.
 - CS.Deals/Waxpeer probes HTTP 200 with price/float; VALIDATING and excluded from feed. CSFloat bounded public read HTTP 403; BLOCKED, no retries/bypass.
 - Steam authentication architecture is in `docs/steam-auth.md`; routes fail closed with 503 until implemented. Basic OpenID is distinct from optional key-requiring Steam APIs.
-- Issues #13/#15 track the merged phase-1 implementation. Gate #14 (authorized database writes) is technically UNBLOCKED through validated `public.tsr_runs`. The next safe persistence step is backend integration with `tsr_runs`, keeping the local snapshot as fallback. #16 remains the authenticated zero-cost remote-promotion gate. See `docs/backlog.md` and `docs/phase-1-evidence.md` for acceptance, limits and source references.
+- Issues #13/#15 track the merged phase-1 implementation. Gate #14 (authorized database writes) is reconciled CLOSED/UNBLOCKED for validated `public.tsr_runs` only. Follow-on #21 `[AUTO] Integrate backend persistence with validated tsr_runs` tracks the next safe persistence step, keeping the local snapshot as fallback. #16 remains OPEN as the authenticated zero-cost remote-promotion gate. #18 and #19 remain preserved as independent bounded backlog items. See `docs/backlog.md` and `docs/phase-1-evidence.md` for acceptance, limits and source references.
 - Health Watch run 37147497542 succeeded; direct legacy health confirmed expected revision. Initial recovery found no open PRs/issues.
 - Auto Dev/Fallback/Continuity Sync view calls rendered cards but exposed no current enabled state to the agent; runtime status is UNVERIFIED. Historical Drive state was enabled. Do not claim current automation execution or create duplicates from this evidence.
 - Last known pre-change healthy main: `39517446f4ea80eac27202f916205d8283e5cf6c`. Release promotion requires exact-head CI and PR merge; inspect GitHub for final merge SHA instead of self-referential commit IDs.
@@ -107,9 +107,20 @@ Bruno is required only for:
 Continue the bounded backlog in `docs/backlog.md`:
 
 - real Radar API/backend integration
-- integrate backend persistence with validated `public.tsr_runs`, retaining local snapshot fallback until cutover is proven
+- #21 integrate backend persistence with validated `public.tsr_runs`, retaining local snapshot fallback until cutover is proven
+- preserve #18 market-normalization/evidence validation and #19 offline Steam verification/session contract tests
+- keep #16 as the explicit gate for authenticated remote production promotion
 - real opportunity feed to the extension
 - reuse/validation of market sources
 - Steam authentication architecture up to any missing-credential gate
 
 Do not silently expand into auto-buy, billing, paid infrastructure or unapproved market-scope changes.
+
+
+## ATLAS continuity reconciliation — 2026-10-04
+
+- #14 reconciled and closed as technically unblocked for the already validated `public.tsr_runs` path only; no broader `tsr_*` claim.
+- #16 intentionally remains open as the production/authenticated remote-promotion HUMAN_GATE.
+- #21 created as the next bounded `[AUTO]` task for backend persistence integration with `tsr_runs`, retaining the local durable snapshot fallback.
+- #18 and #19 preserved open and unchanged in scope.
+- This continuity-only change does not deploy production code, add credentials/cost, alter market scope, or change business thresholds.
