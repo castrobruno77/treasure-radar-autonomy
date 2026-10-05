@@ -99,7 +99,17 @@ export class SupabaseAuthStorage {
     return true;
   }
 
+  async ensureUser(steamId) {
+    const response = await this.request('tsr_users?on_conflict=steam_id', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ steam_id: steamId })
+    });
+    if (!response.ok) throw new Error(`TSR_USER_UPSERT_${response.status}`);
+  }
+
   async putCode(record) {
+    await this.ensureUser(record.steamId);
     const response = await this.request('tsr_exchange_codes', {
       method: 'POST',
       headers: { Prefer: 'return=minimal' },
@@ -138,13 +148,7 @@ export class SupabaseAuthStorage {
   }
 
   async putSession(record) {
-    const user = await this.request('tsr_users?on_conflict=steam_id', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({ steam_id: record.steamId })
-    });
-    if (!user.ok) throw new Error(`TSR_USER_UPSERT_${user.status}`);
-
+    await this.ensureUser(record.steamId);
     const response = await this.request('tsr_sessions', {
       method: 'POST',
       headers: { Prefer: 'return=minimal' },
