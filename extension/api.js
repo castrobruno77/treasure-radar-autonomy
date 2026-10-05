@@ -23,7 +23,7 @@ export function certifiedOpportunities(payload) {
   return payload.items.filter((item) => item.status === "CERTIFIED");
 }
 
-export async function fetchOpportunities({ endpoint, limit = 20, since } = {}) {
+export async function fetchOpportunities({ endpoint, limit = 20, since, token = null } = {}) {
   if (!endpoint) {
     return {
       status: "NOT_CONFIGURED",
@@ -38,8 +38,10 @@ export async function fetchOpportunities({ endpoint, limit = 20, since } = {}) {
   url.searchParams.set("limit", String(limit));
   if (since) url.searchParams.set("since", since);
 
+  const headers = { "Accept": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(url, {
-    headers: { "Accept": "application/json" },
+    headers,
     signal: AbortSignal.timeout(10000)
   });
 

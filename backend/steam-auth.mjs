@@ -139,23 +139,33 @@ export function createSteamAuthService({
   }
 
   return {
-    async beginLogin({ returnTo, realm, verifierChallenge }) {
+    async beginLogin({ returnTo, realm, verifierChallenge, state = null, clientReturnTo = null }) {
       assertRealmBinding(returnTo, realm);
       if (typeof verifierChallenge !== "string" || verifierChallenge.length < 20) {
         throw new Error("invalid verifier challenge");
       }
-      const state = randomToken(24);
+      const actualState = state ?? randomToken(24);
+      if (typeof actualState !== "string" || actualState.length < 24 || !/^[A-Za-z0-9_-]+$/.test(actualState)) {
+        throw new Error("invalid state");
+      }
+      if (clientReturnTo !== null) {
+        const callback = new URL(clientReturnTo);
+        if (callback.protocol !== "https:" || !callback.hostname.endsWith(".chromiumapp.org")) {
+          throw new Error("invalid client return_to");
+        }
+      }
       const createdAt = now();
       await storage.putLogin({
-        state,
+        state: actualState,
         returnTo,
         realm,
+        clientReturnTo,
         verifierChallenge,
         createdAt,
         expiresAt: createdAt + loginTtlMs,
         consumed: false
       });
-      return { state, expiresAt: createdAt + loginTtlMs };
+      return { state: actualState, expiresAt: createdAt + loginTtlMs };
     },
 
     async verifyCallback(rawQuery) {
@@ -203,7 +213,7 @@ export function createSteamAuthService({
         expiresAt: now() + codeTtlMs,
         consumed: false
       });
-      return { steamId, code, expiresAt: now() + codeTtlMs };
+      return { steamId, code, clientReturnTo: tx.clientReturnTo ?? null, expiresAt: now() + codeTtlMs };
     },
 
     async exchangeCode({ code, verifier }) {

@@ -10,9 +10,19 @@
     "service_worker": "background.js"
   },
   "options_page": "options.html",
-  "permissions": ["storage", "notifications"],
-  "host_permissions": ["https://*.supabase.co/*"],
-  "optional_host_permissions": ["https://*/*", "http://127.0.0.1/*"],
+  "permissions": [
+    "storage",
+    "notifications",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://*.supabase.co/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://127.0.0.1/*"
+  ],
   "web_accessible_resources": [],
-  "minimum_chrome_version": "116"
+  "minimum_chrome_version": "116",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqLKHnSMjWm7iDQmUDh6n4xrWyFKF4YozrKK8EEjQDHtNT3iJ3s5+W7XoajuEe1P4VSx7n3dD8XzPK1z8ZLqhzJgWWC2tSP0L9bLTm+hXVt/J94/FoVilWhM91LJkUPcHITlb0Dyg5Utu+RVE4pf1DLPr5wX4Qsn8xy3Ro2I0XqbxNFFTuilcg6KIfvxztznqlv4C7SD3uLCEqL1d02J2im3LIf0JzT9rMvQ8t4X8j3hxQaydFupGGM8gj606uTNerIlNERwrvmlffU/3lYKmNtQkZHDDSYr/d+jrONFP/Jkur3Q6fxo1czmbRtXzhoNJ588snAa7Me5NlFYg+X7kvQIDAQAB"
 }
