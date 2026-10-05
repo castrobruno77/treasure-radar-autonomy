@@ -1,5 +1,6 @@
--- DRAFT, NOT APPLIED. apply_migration was refused (25006 read-only transaction).
--- Promote via normal migration tooling/CI once an authorized write path exists.
+-- REFERENCE SCHEMA. public.tsr_runs is already applied and validated in the
+-- SCALE Market Data project after Gate #14 recovery. Do not re-apply this file
+-- blindly; use it to document the contract consumed by the backend.
 -- Snapshot and run metadata in one row avoid incomplete multi-table publication.
 create table public.tsr_runs (
   id uuid primary key,
@@ -15,7 +16,8 @@ alter table public.tsr_runs enable row level security;
 revoke all on public.tsr_runs from public, anon, authenticated;
 grant select, insert on public.tsr_runs to service_role;
 create index tsr_runs_finished_idx on public.tsr_runs (finished_at desc);
--- Acceptance after reviewed application: verify RLS/grants, insert a bounded
--- test run via server role, read exact ID and contents back, prove anon denial.
+-- Validated Gate #14 evidence: RLS enabled; anon/authenticated denied; service_role
+-- SELECT/INSERT verified; bounded write/read/remove test succeeded. Application
+-- integration must still verify exact-ID readback and preserve local fallback.
 -- API must select only COMPLETE scans, bound rows and enforce retention.
 -- Rollback: stop writes/revert application; preserve table/data (no DROP).
