@@ -21,6 +21,16 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### Infrastructure audit and #18 offline reconciliation — 2026-10-04
+
+The existing feature/issue-18-market-normalization branch was recovered without rewriting its two commits. Strict numeric/ID/date validation and offline regression tests were added; CI discovers all test files. CS.Deals/Waxpeer remain VALIDATING and excluded from the feed. See docs/market-normalization.md for contracts, pagination limits and provisional eligibility evidence.
+
+See docs/autonomy-recovery.md for exact permission errors and recovery. Repository push/admin flags are not proof of integration scopes. Rulesets returned []; classic branch protection read returned integration 403; Actions permission endpoints were rejected by the connector allowlist. Existing safety protections remain intact. Historical write refusals lack raw reasons; current mutation results must be checked separately.
+
+Cloud scheduler UI confirmed Auto Dev v2 (6ac2be3b9c6481918409e072acb5b523) PAUSED, legacy PAUSED, Fallback and Continuity Sync ACTIVE at audit time. Workers must never manage schedules; a refusal stops only the affected operation, not the schedule. Platform-enforced worker capability isolation is not exposed. Do not claim a permanent scheduler fix based on a prompt change alone.
+
+#18 has an offline completion path on its preserved branch; #19 and #21 remain safe offline work. #16 is the remote-promotion gate. Merge/CI status must be read from the final PR head; this checkpoint does not claim an unobserved merge or scheduler activation.
+
 Initial safe bootstrap backlog is complete:
 
 - #4 Extension Radar API settings — complete

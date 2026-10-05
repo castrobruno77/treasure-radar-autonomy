@@ -1,0 +1,15 @@
+{
+  "csdeals": {
+    "items": [
+      {"id":"csd-1","market_hash_name":"MAC-10 | Sienna Damask (Factory New)","price":33,"cs_paint_wear":0.03125,"captured_at":"2026-10-03T21:24:00Z"},
+      {"id":"csd-2","market_hash_name":"MAC-10 | Sienna Damask (Minimal Wear)","price":125,"cs_paint_wear":0.08,"captured_at":"2026-10-03T21:24:01Z"}
+    ]
+  },
+  "waxpeer": {
+    "timestamp":1791062640,
+    "items":[
+      {"item_id":"wax-1","name":"MAC-10 | Sienna Damask (Factory New)","price":330,"float":0.03125},
+      {"item_id":"wax-2","name":"MAC-10 | Sienna Damask (Minimal Wear)","price":1250,"float":0.08}
+    ]
+  }
+}
