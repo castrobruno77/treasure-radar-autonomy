@@ -14,9 +14,6 @@ const IDENTITY = `https://steamcommunity.com/openid/id/${STEAM_ID}`;
 const VERIFIER = "offline-verifier-1234567890";
 const BASE_TIME = Date.parse("2026-10-05T20:00:00Z");
 
-function deterministicRandom(size) {
-  return Buffer.alloc(size, 7);
-}
 
 function callbackQuery(state, overrides = {}, extras = []) {
   const values = {
@@ -40,10 +37,11 @@ function makeHarness({ nowValue = BASE_TIME, accepted = true } = {}) {
   let clock = nowValue;
   const storage = createMemoryAuthStorage();
   const calls = [];
+  let randomCounter = 0;
   const service = createSteamAuthService({
     storage,
     now: () => clock,
-    random: deterministicRandom,
+    random: (size) => Buffer.alloc(size, (++randomCounter) & 0xff),
     http: {
       async checkAuthentication(payload) {
         calls.push(payload);
