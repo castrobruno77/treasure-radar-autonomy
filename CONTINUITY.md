@@ -21,6 +21,12 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### #19 offline Steam verifier/session contracts — 2026-10-05
+
+Issue #18 is administratively closed as completed after its merged normalization work. The next bounded task, #19, is implemented on `feature/issue-19-steam-contracts`: injected HTTP/storage Steam OpenID verification and opaque session primitives plus offline contract tests covering strict provider/return_to/realm/identity checks, duplicate fields, state/nonce/exchange-code replay, expiry, verifier challenge binding, cross-user denial and revocation. Real Steam login, remote auth routes, credentials and production sessions remain disabled; #16 continues to gate authenticated remote promotion. This change must pass CI at its exact head before PR merge and #19 closure.
+
+
+
 ### Infrastructure audit and #18 offline reconciliation — 2026-10-04
 
 The existing feature/issue-18-market-normalization branch was recovered without rewriting its two commits. Strict numeric/ID/date validation and offline regression tests were added; CI discovers all test files. CS.Deals/Waxpeer remain VALIDATING and excluded from the feed. See docs/market-normalization.md for contracts, pagination limits and provisional eligibility evidence.
