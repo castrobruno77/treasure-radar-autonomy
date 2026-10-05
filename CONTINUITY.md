@@ -21,6 +21,16 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### #16 authenticated remote promotion — remote-ready package — 2026-10-05
+
+Bruno explicitly authorized Gate #16. A dedicated branch `feature/issue-16-authenticated-remote` now contains the fail-closed remote package: stable extension identity `jlnahdgkmannagapaakmgbcahoholpmg` via manifest public key; explicit Chrome Identity Steam login/logout client; server-side Steam OpenID verification; exact extension-origin/CORS binding; one-use exchange code; bearer session feed protection; durable Supabase auth/session adapter; Railway-ready remote server; and a reviewed auth schema proposal. The branch CI is green through the current implementation.
+
+Deployment remains intentionally incomplete until two production prerequisites are satisfied: (1) the durable auth schema is applied and verified in the existing Supabase project; (2) the isolated Railway service receives the existing Supabase server-side credential without creating a new secret. No existing Railway service contains `SUPABASE_SERVICE_ROLE_KEY`, so it cannot be reused by internal Railway reference today. Do not copy secrets into chat or source control.
+
+The existing `scale-runtime-market` service is deliberately SUSPENDED and carries unrelated market credentials; it must not be overwritten for Radar promotion. The correct target is an isolated `treasure-radar-api` service. Keep `TSR_AUTH_ENABLED=false` until HTTPS origin, stable extension ID, durable storage and smoke checks are complete. Anonymous `/v1/opportunities` must remain closed.
+
+
+
 ### #21 resilient `tsr_runs` persistence — 2026-10-05
 
 Issue #19 is merged/closed through PR #26. Issue #21 is implemented on `feature/issue-21-tsr-runs-persistence`: completed scans are written atomically to the existing local snapshot first, then persisted to the already validated `public.tsr_runs` path when the existing server-side Supabase environment is present. The database adapter inserts bounded COMPLETE run metadata and verifies exact-ID readback. Backend reads prefer the latest COMPLETE database snapshot but fall back to the durable local snapshot on unavailable/null/invalid database reads; read paths never rewrite timestamps or reset freshness. No new credential is created or committed, no schema mutation occurs, and #16 still gates authenticated remote production promotion. Tests cover successful persistence/readback, database failure and local fallback; merge requires exact-head CI PASS.
