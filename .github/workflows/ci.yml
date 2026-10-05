@@ -23,4 +23,4 @@ jobs:
           node tests/options.test.mjs
           node tests/opportunity-contract.test.mjs
           node tests/health-state.test.mjs
-          node --test tests/backend.test.mjs
+          node --test tests/*.test.mjs
