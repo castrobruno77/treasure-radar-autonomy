@@ -15,6 +15,7 @@ async function boot() {
     "tsrStaleAfterSeconds",
     "tsrLastSuccessfulFetchAt"
   ]);
+  const session = await chrome.storage.session.get(["tsrSessionToken"]);
 
   const endpointConfigured = Boolean(stored.tsrApiEndpoint);
   const staleAfterSeconds = Number.isFinite(Number(stored.tsrStaleAfterSeconds))
@@ -35,7 +36,7 @@ async function boot() {
   }
 
   try {
-    const payload = await fetchOpportunities({ endpoint: stored.tsrApiEndpoint });
+    const payload = await fetchOpportunities({ endpoint: stored.tsrApiEndpoint, token: session.tsrSessionToken || null });
     const health = deriveHealthState({
       endpointConfigured: true,
       payload,
