@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { FileStore } from './store.mjs';
+import { ResilientRunStore, createSupabaseRunsStoreFromEnv } from './persistence.mjs';
 import { createHandler } from './handler.mjs';
 
 // Deliberately loopback-only until the Steam/session and hosting gate is resolved.
@@ -21,7 +22,9 @@ export function startServer({ store, port = 8787 } = {}) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const store = new FileStore(process.env.TSR_DATA_DIR || '.data');
+  const local = new FileStore(process.env.TSR_DATA_DIR || '.data');
+  const remote = createSupabaseRunsStoreFromEnv();
+  const store = new ResilientRunStore({ local, remote });
   const server = await startServer({ store });
   console.log(`Treasure Radar local pilot: http://127.0.0.1:${server.address().port}`);
 }
