@@ -25,11 +25,11 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 The existing feature/issue-18-market-normalization branch was recovered without rewriting its two commits. Strict numeric/ID/date validation and offline regression tests were added; CI discovers all test files. CS.Deals/Waxpeer remain VALIDATING and excluded from the feed. See docs/market-normalization.md for contracts, pagination limits and provisional eligibility evidence.
 
-See docs/autonomy-recovery.md for exact permission errors and recovery. Repository push/admin flags are not proof of integration scopes. Rulesets returned []; classic branch protection read returned integration 403; Actions permission endpoints were rejected by the connector allowlist. Existing safety protections remain intact. Historical write refusals lack raw reasons; current mutation results must be checked separately.
+See docs/autonomy-recovery.md for exact permission errors and recovery. Administrative reads through the connector failed, but authenticated settings UI confirmed: no classic branch protection, Actions enabled, default GITHUB_TOKEN read-only and Actions PR creation disabled. Rulesets returned []; main reports protected=false. Settings remain unchanged. The separate GitHub integration successfully created commits, updated refs, created a branch, opened PR #24 and merged it after exact-head CI PASS. Historical refusal causes remain unknown; no new credential or broader permission was needed.
 
-Cloud scheduler UI confirmed Auto Dev v2 (6ac2be3b9c6481918409e072acb5b523) PAUSED, legacy PAUSED, Fallback and Continuity Sync ACTIVE at audit time. Workers must never manage schedules; a refusal stops only the affected operation, not the schedule. Platform-enforced worker capability isolation is not exposed. Do not claim a permanent scheduler fix based on a prompt change alone.
+Cloud scheduler UI initially confirmed Auto Dev v2 (6ac2be3b9c6481918409e072acb5b523) PAUSED. This maintenance session saved its stricter worker contract and reactivated it; hourly next execution was confirmed. Legacy remains PAUSED; Fallback and Continuity Sync are ACTIVE. Fallback uses actual activity timestamps and observes/alerts when exclusive takeover cannot be proven. Workers never manage schedules; a refusal stops only the affected operation. Platform-enforced capability isolation is not exposed. Do not claim a permanent scheduler fix from prompts alone.
 
-#18 has an offline completion path on its preserved branch; #19 and #21 remain safe offline work. #16 is the remote-promotion gate. Merge/CI status must be read from the final PR head; this checkpoint does not claim an unobserved merge or scheduler activation.
+#18 offline normalizer/tests are merged through PR #24 (merge 8b78a0293f1de9f726db44a0b3b231d1565c8066; CI 37252184089 PASS at head 1e2cf31d6770f92604c85e47213390ce5b579ffa). Source-pagination/full eligibility evidence remains an explicit technical follow-up, so #18 is not falsely closed. #19 and #21 remain executable offline. #16 is the remote-promotion gate. A permanent platform guarantee and full installation scope inventory remain unavailable; installation settings require user sudo reauthentication if that inventory is needed.
 
 Initial safe bootstrap backlog is complete:
 
@@ -69,7 +69,8 @@ Expected revision:
 
 ## Automation IDs
 
-- Treasure Radar Auto Dev: `6ac05608947881918a66e360dff18d61`
+- Treasure Radar Auto Dev v2: `6ac2be3b9c6481918409e072acb5b523` (active after infrastructure recovery)
+- Treasure Radar Auto Dev legacy: `6ac05608947881918a66e360dff18d61` (intentionally paused)
 - Treasure Radar Fallback: `6ac0982a6a208191b3cb1e94780c7112`
 - Treasure Radar Gate Watch: `6ac04f57003c8191a1a7a96e99642b12` (intentionally disabled at this checkpoint)
 - Treasure Continuity Sync: `6ac15096afbc8191a6cd7569133587c7` (historically every 6 hours; current state unverified)

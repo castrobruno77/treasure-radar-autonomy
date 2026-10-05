@@ -1,5 +1,14 @@
 # Bounded next cycle
 
+## Current executable queue after infrastructure recovery
+
+- #18: offline normalizers and seven regression tests merged in PR #24. Finish authoritative eligibility/full source-pagination evidence; keep both sources VALIDATING and excluded from feed. This remaining evidence work is not a new credential or production gate.
+- #19: implement injected HTTP/storage verifier and session interfaces with offline replay, expiry and binding tests. Existing login routes stay closed. No live Steam credential needed for offline work.
+- #21: implement injected tsr_runs persistence/readback with database-error and atomic-local-fallback tests. Use the existing authorized connection only for any later live check. Never invent a credential or imply broader schema validation.
+- #16: remote authenticated promotion remains HUMAN_GATE. #14 is closed for validated public.tsr_runs only.
+
+Current infrastructure recovery evidence and worker/watchdog boundaries: docs/autonomy-recovery.md. Historical planning below is retained as history; it does not reopen #14.
+
 All work keeps ZERO COST MODE, existing collection/rarity and comparator. No billing, auto-buy, new secrets, paid infrastructure or economic threshold changes. Every material change updates CONTINUITY.md and follows branch -> CI -> PR -> merge.
 
 | Issue | Scope | Exit condition |
