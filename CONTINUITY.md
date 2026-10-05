@@ -21,6 +21,12 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### #21 resilient `tsr_runs` persistence — 2026-10-05
+
+Issue #19 is merged/closed through PR #26. Issue #21 is implemented on `feature/issue-21-tsr-runs-persistence`: completed scans are written atomically to the existing local snapshot first, then persisted to the already validated `public.tsr_runs` path when the existing server-side Supabase environment is present. The database adapter inserts bounded COMPLETE run metadata and verifies exact-ID readback. Backend reads prefer the latest COMPLETE database snapshot but fall back to the durable local snapshot on unavailable/null/invalid database reads; read paths never rewrite timestamps or reset freshness. No new credential is created or committed, no schema mutation occurs, and #16 still gates authenticated remote production promotion. Tests cover successful persistence/readback, database failure and local fallback; merge requires exact-head CI PASS.
+
+
+
 ### #19 offline Steam verifier/session contracts — 2026-10-05
 
 Issue #18 is administratively closed as completed after its merged normalization work. The next bounded task, #19, is implemented on `feature/issue-19-steam-contracts`: injected HTTP/storage Steam OpenID verification and opaque session primitives plus offline contract tests covering strict provider/return_to/realm/identity checks, duplicate fields, state/nonce/exchange-code replay, expiry, verifier challenge binding, cross-user denial and revocation. Real Steam login, remote auth routes, credentials and production sessions remain disabled; #16 continues to gate authenticated remote promotion. This change must pass CI at its exact head before PR merge and #19 closure.
