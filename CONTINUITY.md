@@ -21,6 +21,18 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### #16 authorized remote promotion — code/schema ready, Railway capacity blocked — 2026-10-05
+
+Gate #16 is explicitly authorized. PR #28 merged the authenticated remote-ready package into `main` at `fbc26da20648caf74a6929136dade208d803965a` after CI PASS on exact head `a16cf5f042651bb7cf1eee1e62f2bb4e6b793948`.
+
+Supabase durable auth/session migration is applied and verified in project `SCALE Market Data`: `tsr_users`, `tsr_login_transactions`, `tsr_openid_nonces`, `tsr_exchange_codes`, and `tsr_sessions` exist with RLS enabled. `anon` and `authenticated` have no table grants. `service_role` is restricted to SELECT/INSERT/UPDATE only. A transactional write/read executed under `service_role` succeeded and was rolled back. Security advisor reports RLS-without-policy as INFO; this is intentional for server-only access.
+
+The first isolated Railway staging attempt for service `treasure-radar-api` was refused with: `Free plan resource provision limit exceeded. Please upgrade to provision more resources!` No retry/bypass, alternate identity, paid upgrade, destructive reuse, or modification of `scale-runtime-market` was attempted. Existing Railway services do not expose an existing `SUPABASE_SERVICE_ROLE_KEY` reference that can be reused. Therefore #16 remains OPEN: real HTTPS deployment, Steam callback smoke, and restart durability are not yet met.
+
+Next operator decision is strictly infrastructure capacity: free one existing Railway resource only if independently proven safe to retire, or explicitly approve paid capacity. Until then, production auth remains fail-closed and no remote feed is exposed.
+
+
+
 ### #16 authenticated remote promotion — remote-ready package — 2026-10-05
 
 Bruno explicitly authorized Gate #16. A dedicated branch `feature/issue-16-authenticated-remote` now contains the fail-closed remote package: stable extension identity `jlnahdgkmannagapaakmgbcahoholpmg` via manifest public key; explicit Chrome Identity Steam login/logout client; server-side Steam OpenID verification; exact extension-origin/CORS binding; one-use exchange code; bearer session feed protection; durable Supabase auth/session adapter; Railway-ready remote server; and a reviewed auth schema proposal. The branch CI is green through the current implementation.

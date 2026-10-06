@@ -33,3 +33,17 @@ Do not overwrite `scale-runtime-market`. It is deliberately suspended and contai
 ## Rollback
 
 Disable `TSR_AUTH_ENABLED`, remove/revert the Radar service deployment, and preserve auth/session rows for audit. Existing SCALE services and market credentials are not modified.
+
+
+## Verified production preparation — 2026-10-05
+
+- PR #28 merged remote-ready code after exact-head CI PASS.
+- Durable Supabase auth/session schema applied successfully.
+- RLS enabled on all five auth tables.
+- `anon` / `authenticated`: no table grants.
+- `service_role`: SELECT / INSERT / UPDATE only.
+- Transactional service-role write/read test passed and rolled back.
+- Railway isolated service creation was refused by the platform with: `Free plan resource provision limit exceeded. Please upgrade to provision more resources!`
+- No paid upgrade, resource deletion, service overwrite, secret creation, or retry through another channel was performed.
+
+#16 must remain open until an isolated runtime can be provisioned, configured with the existing server-side Supabase credential outside source/chat, and smoke-tested with a real Steam callback plus restart durability.
