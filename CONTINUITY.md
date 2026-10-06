@@ -21,6 +21,16 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### #16 zero-cost Railway runtime live, fail-closed — 2026-10-05
+
+Bruno explicitly authorized reuse of the inactive legacy Railway `scale-scheduler` slot instead of paid capacity. The old scheduler deployment remains available in Railway history as rollback evidence. The service source is now pinned to Treasure Radar `main` at `c59b1a8065b386d58fa68619892f82c4b8c5ba5e`, with start command `node backend/remote-server.mjs`, healthcheck `/health`, sleep enabled, and restart-on-failure. A missing `package.json` caused the first Railpack build to fail before runtime; PR #30 added the Node 22 runtime manifest, passed CI, merged, and subsequent Railway deployments succeeded.
+
+Public Railway domain is now `https://treasure-radar-api.up.railway.app`. Runtime logs confirm `Treasure Radar remote API listening on 8080`; latest deployment after final origin alignment is SUCCESS. `TSR_PUBLIC_ORIGIN`, `TSR_EXTENSION_ID`, and `SUPABASE_URL` are configured. `TSR_AUTH_ENABLED=false` remains intentionally set, so authentication/feed stay fail-closed.
+
+The only remaining production prerequisite is secure injection of the existing server-side `SUPABASE_SERVICE_ROLE_KEY` into the Railway service. No available connector exposes a safe pass-through for that existing secret, and the key must not be copied into chat or source control. Until that variable is supplied outside chat, do not enable auth, perform real Steam callback smoke, or close #16.
+
+
+
 ### #16 authorized remote promotion — code/schema ready, Railway capacity blocked — 2026-10-05
 
 Gate #16 is explicitly authorized. PR #28 merged the authenticated remote-ready package into `main` at `fbc26da20648caf74a6929136dade208d803965a` after CI PASS on exact head `a16cf5f042651bb7cf1eee1e62f2bb4e6b793948`.
