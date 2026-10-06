@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { FileStore } from './store.mjs';
 import { SupabaseRunsStore } from './persistence.mjs';
 import { createRemoteHandler } from './remote-handler.mjs';
+import { reportRemoteFeedPreparation } from './prepare-remote-feed.mjs';
 
 export function createRemoteStore(env = process.env) {
   if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -37,4 +38,9 @@ export async function startRemoteServer({ env = process.env, port = Number(env.P
 if (import.meta.url === `file://${process.argv[1]}`) {
   const server = await startRemoteServer();
   console.log(`Treasure Radar remote API listening on ${server.address().port}`);
+  // Opt-in for the controlled rollout; no timer, retries or request-triggered scans.
+  // Bind first so a bounded (up to 105s) scan cannot fail the liveness healthcheck.
+  if (process.env.TSR_BOOTSTRAP_FEED === 'true') {
+    await reportRemoteFeedPreparation();
+  }
 }

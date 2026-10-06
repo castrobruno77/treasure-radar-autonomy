@@ -21,6 +21,19 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### Authenticated feed 503 diagnosed — 2026-10-05
+
+Live Railway logs confirm successful Steam start/callback/exchange followed by feed
+503. Read-only Supabase inspection confirms `tsr_runs` is empty with the expected
+schema, RLS and server-only grants. Remote startup reads but never populates this
+table, producing `NO_SUCCESSFUL_SCAN`; authentication does not need replacement.
+The earlier missing-key/fail-closed checkpoint below is historical: the live login
+has since succeeded. The current branch adds explicit, one-shot, empty-database
+feed preparation with strict durable persistence and offline regression coverage.
+See [diagnosis and controlled redeploy](docs/authenticated-feed-recovery.md) for
+the exact target, gates, limitations and rollback. No production deployment or
+database mutation is part of this repair's validation; merge requires exact-head CI.
+
 ### #16 zero-cost Railway runtime live, fail-closed — 2026-10-05
 
 Bruno explicitly authorized reuse of the inactive legacy Railway `scale-scheduler` slot instead of paid capacity. The old scheduler deployment remains available in Railway history as rollback evidence. The service source is now pinned to Treasure Radar `main` at `c59b1a8065b386d58fa68619892f82c4b8c5ba5e`, with start command `node backend/remote-server.mjs`, healthcheck `/health`, sleep enabled, and restart-on-failure. A missing `package.json` caused the first Railpack build to fail before runtime; PR #30 added the Node 22 runtime manifest, passed CI, merged, and subsequent Railway deployments succeeded.

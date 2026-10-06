@@ -50,6 +50,7 @@ export class SupabaseRunsStore {
     const response = await this.fetcher(`${this.url}/rest/v1/tsr_runs`, {
       method: 'POST',
       redirect: 'error',
+      signal: AbortSignal.timeout(5000),
       headers: this.headers({ Prefer: 'return=minimal' }),
       body: JSON.stringify(row)
     });
@@ -57,7 +58,7 @@ export class SupabaseRunsStore {
 
     const readback = await this.fetcher(
       `${this.url}/rest/v1/tsr_runs?id=eq.${encodeURIComponent(id)}&select=id,status,snapshot&limit=1`,
-      { method: 'GET', redirect: 'error', headers: this.headers() }
+      { method: 'GET', redirect: 'error', signal: AbortSignal.timeout(5000), headers: this.headers() }
     );
     if (!readback.ok) throw new Error(`TSR_RUNS_READBACK_${readback.status}`);
     const rows = await readback.json();
@@ -71,11 +72,12 @@ export class SupabaseRunsStore {
   async read() {
     const response = await this.fetcher(
       `${this.url}/rest/v1/tsr_runs?status=eq.COMPLETE&select=id,finished_at,snapshot&order=finished_at.desc&limit=1`,
-      { method: 'GET', redirect: 'error', headers: this.headers() }
+      { method: 'GET', redirect: 'error', signal: AbortSignal.timeout(5000), headers: this.headers() }
     );
     if (!response.ok) throw new Error(`TSR_RUNS_SELECT_${response.status}`);
     const rows = await response.json();
-    if (!Array.isArray(rows) || rows.length === 0) return null;
+    if (!Array.isArray(rows)) throw new Error('TSR_RUNS_INVALID_RESPONSE');
+    if (rows.length === 0) return null;
     return requireSnapshot(rows[0].snapshot);
   }
 }
