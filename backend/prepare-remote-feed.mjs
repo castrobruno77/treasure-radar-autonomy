@@ -1,6 +1,7 @@
 import { createSupabaseRunsStoreFromEnv } from './persistence.mjs';
 import { FileStore } from './store.mjs';
 import { collectScan } from './radar.mjs';
+import { RefreshCoordinator, createRefreshWorker } from './refresh.mjs';
 
 // Explicit, one-shot cold-start preparation. Never called by a feed request.
 // One replica only: the local lock coordinates collectors in this container.
@@ -8,6 +9,10 @@ export async function prepareRemoteFeed({
   env = process.env, fetcher = fetch, collect = collectScan, now = Date.now,
   local = new FileStore(env.TSR_DATA_DIR || '.data')
 } = {}) {
+  if (env.TSR_REFRESH_ENABLED === 'true') {
+    return createRefreshWorker({ coordinator: new RefreshCoordinator({ env, fetcher }),
+      collect: () => collect(fetcher), log: () => {} }).tick();
+  }
   const remote = createSupabaseRunsStoreFromEnv(env, { fetcher });
   if (!remote) throw new Error('SUPABASE_RUNS_CONFIG_REQUIRED');
   const release = await local.lock();

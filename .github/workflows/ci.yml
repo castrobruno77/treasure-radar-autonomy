@@ -24,3 +24,28 @@ jobs:
           node tests/opportunity-contract.test.mjs
           node tests/health-state.test.mjs
           node --test tests/*.test.mjs
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: radar_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ci-only
+      PGDATABASE: radar_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Real Postgres lease, fencing, TTL, backoff, retention and access tests
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/refresh-schema-setup.sql
+          psql -v ON_ERROR_STOP=1 -f tests/refresh-database.sql
+          python3 tests/refresh-concurrency.py

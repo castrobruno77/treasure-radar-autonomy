@@ -20,7 +20,7 @@ Produto provisório focado em detectar inputs raros/subprecificados para trade-u
 Mudanças reversíveis, sem custo, sem nova credencial e dentro do escopo aprovado podem avançar autonomamente com teste, validação e rollback.
 
 ## Estado
-Piloto local com coleta real DMarket, API própria, snapshot persistente e cliente da extensão integrados. O login Steam remoto já foi validado; o feed remoto precisa da primeira coleta persistida. Veja o [diagnóstico do 503 e redeploy controlado](docs/authenticated-feed-recovery.md).
+Login Steam e snapshot remoto inicial validados. O [refresh recorrente controlado](docs/recurring-freshness.md) adiciona TTL, lease e limites no runtime existente, sem alterar a autenticação. Veja também o [diagnóstico histórico do 503](docs/authenticated-feed-recovery.md).
 
 ## Executar o piloto (Node 22 ou superior)
 

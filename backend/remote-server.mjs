@@ -3,6 +3,9 @@ import { FileStore } from './store.mjs';
 import { SupabaseRunsStore } from './persistence.mjs';
 import { createRemoteHandler } from './remote-handler.mjs';
 import { reportRemoteFeedPreparation } from './prepare-remote-feed.mjs';
+import { pathToFileURL } from 'node:url';
+import { resolve } from 'node:path';
+import { RefreshCoordinator, createRefreshWorker } from './refresh.mjs';
 
 export function createRemoteStore(env = process.env) {
   if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -35,12 +38,17 @@ export async function startRemoteServer({ env = process.env, port = Number(env.P
   return new Promise(resolve => server.listen(port, '0.0.0.0', () => resolve(server)));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const server = await startRemoteServer();
   console.log(`Treasure Radar remote API listening on ${server.address().port}`);
-  // Opt-in for the controlled rollout; no timer, retries or request-triggered scans.
-  // Bind first so a bounded (up to 105s) scan cannot fail the liveness healthcheck.
-  if (process.env.TSR_BOOTSTRAP_FEED === 'true') {
+  // Refresh takes precedence so bootstrap and recurring collection never race.
+  if (process.env.TSR_REFRESH_ENABLED === 'true') {
+    const worker = createRefreshWorker({ coordinator: new RefreshCoordinator() });
+    worker.start();
+    const shutdown = () => { worker.stop(); server.close(); };
+    process.once('SIGTERM', shutdown);
+    process.once('SIGINT', shutdown);
+  } else if (process.env.TSR_BOOTSTRAP_FEED === 'true') {
     await reportRemoteFeedPreparation();
   }
 }
