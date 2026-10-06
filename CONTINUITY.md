@@ -21,6 +21,17 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### #33 recurring freshness — implementation checkpoint
+
+The user confirmed the initial remote feed online with a real Steam session and
+authorized recurring zero-cost freshness through production validation. Issue #33
+adds an opt-in loop on the existing Railway runtime with database TTL/lease,
+owner-fenced publication, shared cooldown/hour budget, backoff/Retry-After, and
+bounded tsr_runs retention. Steam Auth is unchanged. See
+[recurring freshness](docs/recurring-freshness.md) for bounds, schema, rollout,
+sleep/quota limitations and rollback. Keep #33 open until production evidence,
+including two advancing complete captures across TTL, is recorded.
+
 ### Authenticated feed 503 diagnosed — 2026-10-05
 
 Live Railway logs confirm successful Steam start/callback/exchange followed by feed

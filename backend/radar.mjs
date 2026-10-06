@@ -53,14 +53,26 @@ export function normalizeScan(scan, now = Date.now()) {
     scope: { source: 'DMarket', collection: COLLECTION, rarity: RARITY }, items };
 }
 
+export function upstreamFailure(response, now = Date.now()) {
+  const error = new Error(`SCAN_HTTP_${response.status}`);
+  const header = response.headers.get('retry-after');
+  const seconds = header && /^\d+$/.test(header) ? Number(header)
+    : header ? Math.ceil((Date.parse(header) - now) / 1000) : 0;
+  error.retrySeconds = Math.min(2147483647, Math.max(response.status === 429 ? 900 : 0,
+    Number.isFinite(seconds) ? seconds : 0));
+  error.blocked = response.status === 401 || response.status === 403;
+  return error;
+}
+
 export async function collectScan(fetcher = fetch) {
   const health = await fetcher(`${LEGACY_ORIGIN}/health`, { signal: AbortSignal.timeout(10000), redirect: 'error' });
+  if (!health.ok) throw upstreamFailure(health);
   const h = await health.json();
-  if (!health.ok || !h.ok || h.revision !== REVISION) throw new Error('UPSTREAM_REVISION_GATE');
+  if (!h.ok || h.revision !== REVISION) throw Object.assign(new Error('UPSTREAM_REVISION_GATE'), { blocked: true });
   const u = new URL('/rare-scan', LEGACY_ORIGIN);
   for (const [k, v] of Object.entries({ source: 'DMarket', collection: COLLECTION, rarity: RARITY,
     max_jobs: 10, concurrency: 2, timeout_ms: 12000, deadline_ms: 85000 })) u.searchParams.set(k, v);
   const response = await fetcher(u, { signal: AbortSignal.timeout(95000), redirect: 'error' });
-  if (!response.ok) throw new Error(`SCAN_HTTP_${response.status}`);
+  if (!response.ok) throw upstreamFailure(response);
   return normalizeScan(await response.json());
 }
