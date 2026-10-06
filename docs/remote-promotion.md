@@ -47,3 +47,22 @@ Disable `TSR_AUTH_ENABLED`, remove/revert the Radar service deployment, and pres
 - No paid upgrade, resource deletion, service overwrite, secret creation, or retry through another channel was performed.
 
 #16 must remain open until an isolated runtime can be provisioned, configured with the existing server-side Supabase credential outside source/chat, and smoke-tested with a real Steam callback plus restart durability.
+
+
+## Zero-cost runtime reuse — 2026-10-05
+
+With Bruno's explicit authorization, the inactive legacy Railway `scale-scheduler` resource was repurposed instead of purchasing capacity. The previous deployment remains in Railway history and is rollback-capable.
+
+Current runtime:
+- Public origin: `https://treasure-radar-api.up.railway.app`
+- Source: Treasure Radar `main` pinned at `c59b1a8065b386d58fa68619892f82c4b8c5ba5e`
+- Start: `node backend/remote-server.mjs`
+- Healthcheck: `/health`
+- Runtime status: SUCCESS
+- `TSR_AUTH_ENABLED=false`
+- `TSR_EXTENSION_ID=jlnahdgkmannagapaakmgbcahoholpmg`
+- `SUPABASE_URL=https://ubtojlrfxoxbuvgajeos.supabase.co`
+
+The first repository deploy failed at Railpack preparation because the repository lacked `package.json`; PR #30 added a minimal Node 22 manifest and CI passed before redeploy. Subsequent deploys succeeded.
+
+Remaining gate: set the existing `SUPABASE_SERVICE_ROLE_KEY` directly in Railway through a secure operator path. Do not paste it into chat, code, GitHub, or public documentation. Only after that variable exists may `TSR_AUTH_ENABLED` be switched to `true`, followed immediately by real Steam callback, authenticated feed, logout/revocation, and restart-durability smoke checks. #16 remains open until those pass.
