@@ -1,5 +1,7 @@
 export const LEGACY_ORIGIN = 'https://scale-radar.scale-cs2.deno.net';
 export const REVISION = 'OPS045_ROBUST_COMPARATOR_V1';
+export const COLLECTOR_VERSION = 'TREASURE_RADAR_DMARKET_V1';
+export const SCAN_TELEMETRY = Symbol('SCAN_TELEMETRY');
 export const COLLECTION = 'The 2021 Mirage Collection';
 export const RARITY = 'Consumer Grade';
 const statuses = { CERTIFIED_SURVIVOR: 'CERTIFIED', REJECTED_BY_COMPARATOR: 'REJECTED', INSUFFICIENT_EVIDENCE: 'INSUFFICIENT' };
@@ -48,9 +50,29 @@ export function normalizeScan(scan, now = Date.now()) {
       captured_at: x.timestamp, status
     };
   });
-  return { status: 'OK', generated_at: scan.freshness.captured_at, comparator_version: REVISION,
+  const snapshot = { status: 'OK', generated_at: scan.freshness.captured_at, comparator_version: REVISION,
     pilot_notice: 'Piloto: sinal do comparador legado; elegibilidade para trade-up ainda não revalidada.',
     scope: { source: 'DMarket', collection: COLLECTION, rarity: RARITY }, items };
+  const variants = [...new Set(scan.opportunities.map(x => x.variant))].sort();
+  Object.defineProperty(snapshot, SCAN_TELEMETRY, {
+    enumerable: false,
+    value: Object.freeze({
+      source: 'DMarket',
+      collection: COLLECTION,
+      rarity: RARITY,
+      variant_scope: variants.length ? variants.join('|') : 'NONE',
+      jobs_planned: scan.jobs.planned,
+      jobs_completed: scan.jobs.completed,
+      // The upstream mini-scan exposes candidate listing observations, not full market depth.
+      listing_count_seen: scan.opportunities.length,
+      comparable_count: items.filter(x => x.peer_count > 0).length,
+      candidate_count: items.length,
+      certified_count: items.filter(x => x.status === 'CERTIFIED').length,
+      collector_version: COLLECTOR_VERSION,
+      comparator_version: REVISION
+    })
+  });
+  return snapshot;
 }
 
 export function upstreamFailure(response, now = Date.now()) {
