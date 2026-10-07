@@ -93,6 +93,10 @@ test('rate-limit failure records safe error telemetry while preserving shared ba
   assert.equal(events[0].error_code, 'SCAN_HTTP_429');
   assert.equal(events[0].rate_limit_hit, true);
   assert.equal(events[0].retry_after_seconds, 900);
+  assert.equal(events[0].collection, COLLECTION);
+  assert.equal(events[0].rarity, RARITY);
+  assert.equal(events[0].collector_version, 'TREASURE_RADAR_DMARKET_V1');
+  assert.equal(events[0].comparator_version, REVISION);
 });
 
 test('coordinator telemetry endpoints stay server-only and validate recorded response', async () => {
