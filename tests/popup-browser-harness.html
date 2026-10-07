@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Popup Chromium smoke</title>
+</head>
+<body>
+  <script type="module">
+    const nativeFetch = globalThis.fetch.bind(globalThis);
+    const popupHtml = await (await nativeFetch("/extension/popup.html")).text();
+    const parsed = new DOMParser().parseFromString(popupHtml, "text/html");
+    document.body.innerHTML = parsed.body.innerHTML;
+
+    const { createPopupController } = await import("/extension/popup.js");
+    const { logoutSteam } = await import("/extension/auth.js");
+
+    const mode = new URL(location.href).searchParams.get("mode") || "login";
+    const localData = {
+      tsrApiEndpoint: "https://radar.test",
+      tsrStaleAfterSeconds: 300
+    };
+    const sessionData = ["ready", "stale", "error", "expired"].includes(mode)
+      ? { tsrSessionToken: "smoke-token" }
+      : {};
+
+    const pick = (data, keys) => Object.fromEntries(
+      keys.filter((key) => Object.prototype.hasOwnProperty.call(data, key))
+        .map((key) => [key, data[key]])
+    );
+
+    const chromeApi = {
+      storage: {
+        local: {
+          async get(keys) { return pick(localData, keys); },
+          async set(values) { Object.assign(localData, values); }
+        },
+        session: {
+          async get(keys) { return pick(sessionData, keys); },
+          async set(values) { Object.assign(sessionData, values); },
+          async remove(keys) { for (const key of keys) delete sessionData[key]; }
+        }
+      },
+      identity: {
+        getRedirectURL() { return location.origin + "/steam"; },
+        async launchWebAuthFlow() { return location.origin + "/steam?code=smoke-code"; }
+      }
+    };
+
+    globalThis.chrome = chromeApi;
+    globalThis.fetch = async (input) => {
+      const url = new URL(input instanceof Request ? input.url : input, location.href);
+      if (url.origin !== "https://radar.test") return nativeFetch(input);
+
+      if (url.pathname === "/v1/opportunities") {
+        if (mode === "error") return new Response("{}", { status: 503 });
+        if (mode === "expired") return new Response("{}", { status: 401 });
+        const stale = mode === "stale";
+        return Response.json({
+          status: stale ? "STALE" : "OK",
+          generated_at: "2026-10-07T12:00:00.000Z",
+          freshness_seconds: stale ? 301 : 15,
+          items: []
+        });
+      }
+
+      if (url.pathname === "/v1/auth/steam/start") {
+        return Response.json({ login_url: "https://steamcommunity.com/openid/login" });
+      }
+      if (url.pathname === "/v1/auth/steam/exchange") {
+        return Response.json({
+          token: "cycle-token",
+          expires_at: "2026-10-08T12:00:00.000Z"
+        });
+      }
+      if (url.pathname === "/v1/auth/logout") return new Response(null, { status: 204 });
+      return new Response("{}", { status: 404 });
+    };
+
+    const controller = createPopupController({
+      documentRef: document,
+      chromeApi,
+      logger: { error() {} },
+      now: () => "2026-10-07T12:00:15.000Z"
+    });
+
+    const sequence = [];
+    sequence.push((await controller.boot()).state);
+
+    if (mode === "cycle") {
+      await controller.login();
+      sequence.push(document.getElementById("status").dataset.state);
+      await logoutSteam(localData.tsrApiEndpoint);
+      sequence.push((await controller.boot()).state);
+    }
+
+    document.documentElement.dataset.smokeSequence = sequence.join(",");
+    document.documentElement.dataset.smokeComplete = "true";
+  </script>
+</body>
+</html>
