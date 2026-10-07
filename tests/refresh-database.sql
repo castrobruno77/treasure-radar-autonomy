@@ -108,7 +108,7 @@ begin
   assert (select certified_count=2 and candidate_count=5 and snapshot_age_at_start=245
     from public.tsr_run_telemetry limit 1), 'telemetry counters queryable';
 end;
-$;
+$$;
 reset role;
 do $$
 begin
