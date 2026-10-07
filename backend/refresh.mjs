@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { collectScan, SCAN_TELEMETRY } from './radar.mjs';
+import { collectScan, SCAN_TELEMETRY, COLLECTOR_VERSION, COLLECTION, RARITY, REVISION } from './radar.mjs';
 import { validateOpportunityPayload } from '../extension/api.js';
 
 export class RefreshCoordinator {
@@ -139,8 +139,8 @@ export function createRefreshWorker({ coordinator, collect = collectScan, log = 
         await record({
           run_id: null,
           source: 'DMarket',
-          collection: null,
-          rarity: null,
+          collection: COLLECTION,
+          rarity: RARITY,
           variant_scope: null,
           started_at: new Date(startedMs ?? finishedMs).toISOString(),
           finished_at: new Date(finishedMs).toISOString(),
@@ -157,8 +157,8 @@ export function createRefreshWorker({ coordinator, collect = collectScan, log = 
           rate_limit_hit: errorCode === 'SCAN_HTTP_429',
           retry_after_seconds: Number.isInteger(error.retrySeconds) ? error.retrySeconds : null,
           snapshot_age_at_start: snapshotAgeAtStart,
-          collector_version: null,
-          comparator_version: null
+          collector_version: COLLECTOR_VERSION,
+          comparator_version: REVISION
         });
       }
       log(JSON.stringify({ event: 'REMOTE_FEED_REFRESH', status: result.status }));
