@@ -20,6 +20,20 @@ h1 { margin: 0; font-size: 18px; }
 .opportunity { margin-top: 10px; }
 .opportunity a { display: inline-block; margin-top: 10px; }
 
+.auth-card button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.auth-card button:disabled { cursor: wait; opacity: .7; }
+#auth-message { min-height: 1.4em; font-size: 12px; }
+
+#status[data-state="LOGIN_REQUIRED"],
 #status[data-state="STALE"],
 .stale-label { font-weight: 600; }
 .opportunity.stale { opacity: .78; }

@@ -1,3 +1,12 @@
+export class RadarApiError extends Error {
+  constructor(status) {
+    super(`RADAR_API_HTTP_${status}`);
+    this.name = "RadarApiError";
+    this.status = status;
+    this.code = `RADAR_API_HTTP_${status}`;
+  }
+}
+
 export function validateOpportunityPayload(payload) {
   if (!payload || typeof payload !== "object" || !Array.isArray(payload.items)) {
     throw new Error("RADAR_API_INVALID_PAYLOAD");
@@ -45,6 +54,6 @@ export async function fetchOpportunities({ endpoint, limit = 20, since, token = 
     signal: AbortSignal.timeout(10000)
   });
 
-  if (!response.ok) throw new Error(`RADAR_API_HTTP_${response.status}`);
+  if (!response.ok) throw new RadarApiError(response.status);
   return validateOpportunityPayload(await response.json());
 }

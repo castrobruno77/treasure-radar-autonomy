@@ -24,6 +24,8 @@ jobs:
           node tests/opportunity-contract.test.mjs
           node tests/health-state.test.mjs
           node --test tests/*.test.mjs
+      - name: Chromium popup smoke
+        run: node scripts/popup-chromium-smoke.mjs
   database:
     runs-on: ubuntu-latest
     services:
