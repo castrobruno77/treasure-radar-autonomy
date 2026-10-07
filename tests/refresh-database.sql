@@ -73,6 +73,40 @@ begin
   assert r->>'status'='COMPLETE';
   assert (select count(*)=24 from public.tsr_runs), 'retention cap';
   assert (select count(*)=1 from public.tsr_runs where id=(r->>'run_id')::uuid), 'latest retained';
+
+  -- Lightweight telemetry is separately retained and queryable.
+  insert into public.tsr_run_telemetry(
+    source,collection,rarity,started_at,finished_at,duration_ms,status
+  ) values (
+    'DMarket','old','Consumer Grade',clock_timestamp()-interval '31 days',
+    clock_timestamp()-interval '31 days',1,'ERROR'
+  );
+  r := public.tsr_record_run_telemetry(jsonb_build_object(
+    'run_id',null,
+    'source','DMarket',
+    'collection','The 2021 Mirage Collection',
+    'rarity','Consumer Grade',
+    'variant_scope','NORMAL|SOUVENIR',
+    'started_at',clock_timestamp()-interval '1 second',
+    'finished_at',clock_timestamp(),
+    'duration_ms',1000,
+    'jobs_planned',10,
+    'jobs_completed',10,
+    'listing_count_seen',12,
+    'comparable_count',9,
+    'candidate_count',5,
+    'certified_count',2,
+    'status','COMPLETE',
+    'retry_count',0,
+    'rate_limit_hit',false,
+    'snapshot_age_at_start',245,
+    'collector_version','TREASURE_RADAR_DMARKET_V1',
+    'comparator_version','OPS045_ROBUST_COMPARATOR_V1'
+  ));
+  assert r->>'status'='RECORDED', 'telemetry recorded';
+  assert (select count(*)=1 from public.tsr_run_telemetry), '30 day telemetry retention cleanup';
+  assert (select certified_count=2 and candidate_count=5 and snapshot_age_at_start=245
+    from public.tsr_run_telemetry limit 1), 'telemetry counters queryable';
 end;
 $$;
 reset role;
@@ -82,7 +116,13 @@ begin
   assert not has_function_privilege('authenticated','public.tsr_refresh_finish(uuid,jsonb,integer,boolean)','execute');
   assert not has_table_privilege('anon','public.tsr_refresh_control','select');
   assert not has_table_privilege('authenticated','public.tsr_refresh_control','update');
+  assert not has_table_privilege('anon','public.tsr_run_telemetry','select');
+  assert not has_table_privilege('authenticated','public.tsr_run_telemetry','insert');
+  assert has_table_privilege('service_role','public.tsr_run_telemetry','select');
+  assert not has_function_privilege('anon','public.tsr_record_run_telemetry(jsonb)','execute');
   assert (select relrowsecurity from pg_class where oid='public.tsr_refresh_control'::regclass);
+  assert (select relrowsecurity from pg_class where oid='public.tsr_run_telemetry'::regclass);
+  assert not (select prosecdef from pg_proc where oid='public.tsr_record_run_telemetry(jsonb)'::regprocedure);
   assert not (select prosecdef from pg_proc where oid='public.tsr_refresh_claim(uuid)'::regprocedure);
   assert not (select prosecdef from pg_proc where oid='public.tsr_refresh_finish(uuid,jsonb,integer,boolean)'::regprocedure);
 end;
