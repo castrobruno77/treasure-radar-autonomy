@@ -5,3 +5,5 @@ create role service_role nologin bypassrls;
 grant usage on schema public to service_role;
 \i docs/tsr-schema-proposal.sql
 \i database/refresh.sql
+
+\i database/telemetry.sql
