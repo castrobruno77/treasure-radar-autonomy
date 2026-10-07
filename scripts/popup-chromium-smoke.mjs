@@ -53,7 +53,7 @@ const chrome = findChrome();
 
 async function dump(mode) {
   const url = `http://127.0.0.1:${port}/tests/popup-browser-harness.html?mode=${mode}`;
-  const { stdout } = await execFile(chrome, [
+  const { stdout, stderr } = await execFile(chrome, [
     "--headless=new",
     "--no-sandbox",
     "--disable-gpu",
@@ -62,7 +62,10 @@ async function dump(mode) {
     "--dump-dom",
     url
   ], { maxBuffer: 2 * 1024 * 1024 });
-  assert.match(stdout, /data-smoke-complete="true"/, `${mode} smoke did not complete`);
+  if (!stdout.trim()) {
+    throw new Error(`${mode} Chromium returned an empty DOM. stderr: ${stderr}`);
+  }
+  assert.match(stdout, /data-smoke-complete="true"/, `${mode} smoke did not complete. stderr: ${stderr}`);
   return stdout;
 }
 
