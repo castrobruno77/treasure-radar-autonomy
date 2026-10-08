@@ -23,6 +23,21 @@ export function validateOpportunityPayload(payload) {
         item.price_usd <= 0 || typeof item.captured_at !== "string" || !Number.isFinite(Date.parse(item.captured_at))) {
       throw new Error("RADAR_API_INVALID_PAYLOAD");
     }
+    for (const score of [item.quality_score, item.economic_action_score]) {
+      if (score !== undefined && score !== null && (!Number.isFinite(score) || score < 0 || score > 100)) {
+        throw new Error("RADAR_API_INVALID_PAYLOAD");
+      }
+    }
+    if (item.scoring_version !== undefined && typeof item.scoring_version !== "string") {
+      throw new Error("RADAR_API_INVALID_PAYLOAD");
+    }
+    if (item.action_tier !== undefined && !["DIAMOND","TREASURE","WATCH","BLOCKED"].includes(item.action_tier)) {
+      throw new Error("RADAR_API_INVALID_PAYLOAD");
+    }
+    if (["DIAMOND","TREASURE"].includes(item.action_tier) &&
+        (item.status !== "CERTIFIED" || !Number.isFinite(item.economic_action_score))) {
+      throw new Error("RADAR_API_INVALID_PAYLOAD");
+    }
   }
   return payload;
 }

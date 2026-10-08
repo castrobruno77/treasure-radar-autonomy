@@ -4,28 +4,142 @@
   "title": "Treasure Skins Radar Opportunity",
   "type": "object",
   "required": [
-    "id","source","collection","rarity","market_hash_name","price_usd",
-    "captured_at","status"
+    "id",
+    "source",
+    "collection",
+    "rarity",
+    "market_hash_name",
+    "price_usd",
+    "captured_at",
+    "status"
   ],
   "properties": {
-    "id": {"type":"string"},
-    "source": {"type":"string"},
-    "collection": {"type":"string"},
-    "rarity": {"type":"string"},
-    "market_hash_name": {"type":"string"},
-    "is_souvenir": {"type":"boolean"},
-    "is_stattrak": {"type":"boolean"},
-    "wear": {"type":["string","null"]},
-    "float_value": {"type":["number","null"]},
-    "normalized_float": {"type":["number","null"]},
-    "price_usd": {"type":"number"},
-    "comparable_price_usd": {"type":["number","null"]},
-    "robust_gap_pct": {"type":["number","null"]},
-    "peer_count": {"type":["integer","null"]},
-    "offer_id": {"type":["string","null"]},
-    "listing_url": {"type":["string","null"]},
-    "captured_at": {"type":"string","format":"date-time"},
-    "status": {"enum":["CERTIFIED","REJECTED","INSUFFICIENT"]}
+    "id": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "collection": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "string"
+    },
+    "market_hash_name": {
+      "type": "string"
+    },
+    "is_souvenir": {
+      "type": "boolean"
+    },
+    "is_stattrak": {
+      "type": "boolean"
+    },
+    "wear": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "float_value": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "normalized_float": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "price_usd": {
+      "type": "number"
+    },
+    "comparable_price_usd": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "robust_gap_pct": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "peer_count": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "offer_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "listing_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "CERTIFIED",
+        "REJECTED",
+        "INSUFFICIENT"
+      ]
+    },
+    "scoring_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "quality_score": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 100
+    },
+    "economic_action_score": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 100
+    },
+    "action_tier": {
+      "enum": [
+        "DIAMOND",
+        "TREASURE",
+        "WATCH",
+        "BLOCKED",
+        null
+      ]
+    },
+    "quality_evidence": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "economic_evidence": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
   },
   "additionalProperties": true
 }

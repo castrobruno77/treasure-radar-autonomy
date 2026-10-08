@@ -12,6 +12,7 @@ function rawScan() {
     opportunities: [
       { offer_id: 'a', skin: 'A', variant: 'NORMAL', wear: 'Factory New', float: 0.01, normalized_float: 0.01,
         price_usd: 1, timestamp: '2026-10-06T23:59:59.000Z', classification: 'CERTIFIED_SURVIVOR',
+        listing_link: 'https://dmarket.com/ingame-items/item-list/csgo-skins?test=a',
         robust_comparator: { rule: 'CHEAPEST_EQUAL_OR_BETTER_NORMALIZED_FLOAT', peer_count: 4, gap_pct: 20, cheapest_price_usd: 1.25 } },
       { offer_id: 'b', skin: 'B', variant: 'SOUVENIR', wear: 'Factory New', float: 0.02, normalized_float: 0.02,
         price_usd: 1.5, timestamp: '2026-10-06T23:59:59.000Z', classification: 'INSUFFICIENT_EVIDENCE',
@@ -25,6 +26,10 @@ test('scan telemetry is observable internally but never serialized into feed sna
   assert.equal(snapshot[SCAN_TELEMETRY].jobs_planned, 10);
   assert.equal(snapshot[SCAN_TELEMETRY].candidate_count, 2);
   assert.equal(snapshot[SCAN_TELEMETRY].certified_count, 1);
+  assert.equal(snapshot[SCAN_TELEMETRY].quality_scored_count, 1);
+  assert.equal(snapshot[SCAN_TELEMETRY].economic_scored_count, 0);
+  assert.equal(snapshot[SCAN_TELEMETRY].economic_blocked_count, 1);
+  assert.equal(snapshot[SCAN_TELEMETRY].actionable_count, 0);
   assert.equal(snapshot[SCAN_TELEMETRY].variant_scope, 'NORMAL|SOUVENIR');
   assert.equal(JSON.parse(JSON.stringify(snapshot)).SCAN_TELEMETRY, undefined);
   assert.ok(!JSON.stringify(snapshot).includes('jobs_planned'));
@@ -53,6 +58,12 @@ test('successful refresh records bounded dimensions and counts without changing 
   assert.equal(events[0].rarity, RARITY);
   assert.equal(events[0].candidate_count, 2);
   assert.equal(events[0].certified_count, 1);
+  assert.equal(events[0].quality_scored_count, 1);
+  assert.ok(Number.isFinite(events[0].quality_score_avg));
+  assert.equal(events[0].economic_scored_count, 0);
+  assert.equal(events[0].economic_score_avg, null);
+  assert.equal(events[0].economic_blocked_count, 1);
+  assert.equal(events[0].actionable_count, 0);
   assert.equal(events[0].snapshot_age_at_start, 245);
   assert.equal(events[0].status, 'COMPLETE');
 });

@@ -1,3 +1,4 @@
+import { applyScoring } from './scoring.mjs';
 export const LEGACY_ORIGIN = 'https://scale-radar.scale-cs2.deno.net';
 export const REVISION = 'OPS045_ROBUST_COMPARATOR_V1';
 export const COLLECTOR_VERSION = 'TREASURE_RADAR_DMARKET_V1';
@@ -40,7 +41,7 @@ export function normalizeScan(scan, now = Date.now()) {
       const u = new URL(x.listing_link);
       if (u.protocol === 'https:' && ['dmarket.com', 'www.dmarket.com'].includes(u.hostname) && !u.username && !u.password) listing = u.href;
     } catch { /* Missing deep links are not fabricated. */ }
-    return {
+    return applyScoring({
       id: `dmarket:${x.offer_id}`, source: 'DMarket', collection: COLLECTION, rarity: RARITY,
       market_hash_name: `${x.variant === 'SOUVENIR' ? 'Souvenir ' : ''}${x.skin}${x.wear ? ` (${x.wear})` : ''}`,
       is_souvenir: x.variant === 'SOUVENIR', is_stattrak: false, wear: x.wear ?? null,
@@ -48,12 +49,16 @@ export function normalizeScan(scan, now = Date.now()) {
       comparable_price_usd: r.cheapest_price_usd, robust_gap_pct: r.gap_pct,
       peer_count: r.peer_count, offer_id: x.offer_id, listing_url: listing,
       captured_at: x.timestamp, status
-    };
+    });
   });
   const snapshot = { status: 'OK', generated_at: scan.freshness.captured_at, comparator_version: REVISION,
     pilot_notice: 'Piloto: sinal do comparador legado; elegibilidade para trade-up ainda não revalidada.',
     scope: { source: 'DMarket', collection: COLLECTION, rarity: RARITY }, items };
   const variants = [...new Set(scan.opportunities.map(x => x.variant))].sort();
+  const qualityScores = items.map(x => x.quality_score).filter(Number.isFinite);
+  const economicScores = items.map(x => x.economic_action_score).filter(Number.isFinite);
+  const qualityScoreAvg = qualityScores.length ? Math.round((qualityScores.reduce((a,b)=>a+b,0) / qualityScores.length) * 100) / 100 : null;
+  const economicScoreAvg = economicScores.length ? Math.round((economicScores.reduce((a,b)=>a+b,0) / economicScores.length) * 100) / 100 : null;
   Object.defineProperty(snapshot, SCAN_TELEMETRY, {
     enumerable: false,
     value: Object.freeze({
@@ -68,6 +73,12 @@ export function normalizeScan(scan, now = Date.now()) {
       comparable_count: items.filter(x => x.peer_count > 0).length,
       candidate_count: items.length,
       certified_count: items.filter(x => x.status === 'CERTIFIED').length,
+      quality_scored_count: qualityScores.length,
+      quality_score_avg: qualityScoreAvg,
+      economic_scored_count: economicScores.length,
+      economic_score_avg: economicScoreAvg,
+      economic_blocked_count: items.filter(x => x.status === 'CERTIFIED' && !Number.isFinite(x.economic_action_score)).length,
+      actionable_count: items.filter(x => ['TREASURE','DIAMOND'].includes(x.action_tier)).length,
       collector_version: COLLECTOR_VERSION,
       comparator_version: REVISION
     })

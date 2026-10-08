@@ -11,7 +11,9 @@ for (const malformed of [
   {},
   { items: {} },
   { items: [{ status: "CERTIFIED" }] },
-  { items: [{ id:"x", source:"s", collection:"c", rarity:"r", market_hash_name:"m", price_usd:1, captured_at:"2026-10-03T00:00:00Z", status:"UNKNOWN" }] }
+  { items: [{ id:"x", source:"s", collection:"c", rarity:"r", market_hash_name:"m", price_usd:1, captured_at:"2026-10-03T00:00:00Z", status:"UNKNOWN" }] },
+  { items: [{ id:"x", source:"s", collection:"c", rarity:"r", market_hash_name:"m", price_usd:1, captured_at:"2026-10-03T00:00:00Z", status:"CERTIFIED", quality_score:101 }] },
+  { items: [{ id:"x", source:"s", collection:"c", rarity:"r", market_hash_name:"m", price_usd:1, captured_at:"2026-10-03T00:00:00Z", status:"CERTIFIED", action_tier:"TREASURE", economic_action_score:null }] }
 ]) {
   assert.throws(() => validateOpportunityPayload(malformed), /RADAR_API_INVALID_PAYLOAD/);
 }
