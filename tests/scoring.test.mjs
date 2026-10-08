@@ -69,6 +69,14 @@ test('action tiers require both scores and preserve freshness/actionability gate
   assert.equal(deriveActionTier({ qualityScore:75, economicScore:70 }), 'TREASURE');
   assert.equal(deriveActionTier({ qualityScore:75, economicScore:60 }), 'WATCH');
   assert.equal(deriveActionTier({ qualityScore:90, economicScore:85, fresh:false }), 'WATCH');
-  assert.equal(deriveActionTier({ qualityScore:90, economicScore:85, actionable:false }), 'WATCH');
+  assert.equal(deriveActionTier({ qualityScore:90, economicScore:85, actionable:false }), 'BLOCKED');
   assert.equal(deriveActionTier({ qualityScore:90, economicScore:null }), 'BLOCKED');
+});
+
+test('economic components respect v0.2 qualitative boundaries', async () => {
+  const m = await import('../backend/scoring.mjs');
+  assert.deepEqual([0,2.5,5,7.5,10,15,20].map(m.netMarginPoints), [0,5,10,15,20,32.5,45]);
+  assert.deepEqual([1,2,5,10].map(m.executableDepthPoints), [10,15,20,25]);
+  assert.deepEqual([0,3,7,12,20].map(sampleCount => m.economicLiquidityPoints({sampleCount,latestSaleAgeDays:1})), [0,5,10,15,20]);
+  assert.deepEqual([-1,5,10,20,21].map(m.spreadFrictionPoints), [10,8,6,3,0]);
 });
