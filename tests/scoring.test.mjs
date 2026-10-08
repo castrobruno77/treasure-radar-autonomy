@@ -55,9 +55,12 @@ test('historical evidence thresholds are conservatively rescaled into v0.2 weigh
   assert.equal(floatQualityPoints(1), 0);
 });
 
-test('hard gates prevent ranking when comparator or listing identity is not actionable', () => {
+test('quality and actionability gates are separate', () => {
   assert.equal(applyScoring(item({ status:'REJECTED' })).quality_score, null);
-  assert.equal(applyScoring(item({ listing_url:null })).quality_score, null);
+  const missingLink = applyScoring(item({ listing_url:null }));
+  assert.equal(missingLink.quality_score, 67.4);
+  assert.equal(missingLink.action_tier, 'BLOCKED');
+  assert.deepEqual(missingLink.actionability_blockers, ['LISTING_URL_REQUIRED']);
   assert.equal(applyScoring(item({ peer_count:3 })).quality_score, null);
 });
 
