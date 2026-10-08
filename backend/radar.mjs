@@ -1,7 +1,8 @@
 import { applyScoring } from './scoring.mjs';
+import { enrichDmarketEconomics } from './dmarket-economics.mjs';
 export const LEGACY_ORIGIN = 'https://scale-radar.scale-cs2.deno.net';
 export const REVISION = 'OPS045_ROBUST_COMPARATOR_V1';
-export const COLLECTOR_VERSION = 'TREASURE_RADAR_DMARKET_V1';
+export const COLLECTOR_VERSION = 'TREASURE_RADAR_DMARKET_V2';
 export const SCAN_TELEMETRY = Symbol('SCAN_TELEMETRY');
 export const COLLECTION = 'The 2021 Mirage Collection';
 export const RARITY = 'Consumer Grade';
@@ -54,6 +55,12 @@ export function normalizeScan(scan, now = Date.now()) {
   const snapshot = { status: 'OK', generated_at: scan.freshness.captured_at, comparator_version: REVISION,
     pilot_notice: 'Piloto: sinal do comparador legado; elegibilidade para trade-up ainda não revalidada.',
     scope: { source: 'DMarket', collection: COLLECTION, rarity: RARITY }, items };
+  attachScanTelemetry(snapshot, scan);
+  return snapshot;
+}
+
+export function attachScanTelemetry(snapshot, scan) {
+  const items = snapshot.items;
   const variants = [...new Set(scan.opportunities.map(x => x.variant))].sort();
   const qualityScores = items.map(x => x.quality_score).filter(Number.isFinite);
   const economicScores = items.map(x => x.economic_action_score).filter(Number.isFinite);
@@ -61,6 +68,7 @@ export function normalizeScan(scan, now = Date.now()) {
   const economicScoreAvg = economicScores.length ? Math.round((economicScores.reduce((a,b)=>a+b,0) / economicScores.length) * 100) / 100 : null;
   Object.defineProperty(snapshot, SCAN_TELEMETRY, {
     enumerable: false,
+    configurable: true,
     value: Object.freeze({
       source: 'DMarket',
       collection: COLLECTION,
@@ -97,7 +105,7 @@ export function upstreamFailure(response, now = Date.now()) {
   return error;
 }
 
-export async function collectScan(fetcher = fetch) {
+export async function collectScan(fetcher = fetch, { env = process.env, now = Date.now } = {}) {
   const health = await fetcher(`${LEGACY_ORIGIN}/health`, { signal: AbortSignal.timeout(10000), redirect: 'error' });
   if (!health.ok) throw upstreamFailure(health);
   const h = await health.json();
@@ -107,5 +115,9 @@ export async function collectScan(fetcher = fetch) {
     max_jobs: 10, concurrency: 2, timeout_ms: 12000, deadline_ms: 85000 })) u.searchParams.set(k, v);
   const response = await fetcher(u, { signal: AbortSignal.timeout(95000), redirect: 'error' });
   if (!response.ok) throw upstreamFailure(response);
-  return normalizeScan(await response.json());
+  const raw = await response.json();
+  const snapshot = normalizeScan(raw, now());
+  await enrichDmarketEconomics(snapshot, { env, fetcher, now });
+  attachScanTelemetry(snapshot, raw);
+  return snapshot;
 }
