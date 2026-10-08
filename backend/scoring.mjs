@@ -41,10 +41,146 @@ export function comparatorEvidencePoints(peerCount) {
 
 export function deriveActionTier({ qualityScore, economicScore, fresh = true, actionable = true } = {}) {
   if (!Number.isFinite(qualityScore) || !Number.isFinite(economicScore)) return 'BLOCKED';
-  if (!fresh || !actionable) return 'WATCH';
+  if (!actionable) return 'BLOCKED';
+  if (!fresh) return 'WATCH';
   if (qualityScore >= 85 && economicScore >= 80) return 'DIAMOND';
   if (qualityScore >= 70 && economicScore >= 65) return 'TREASURE';
   return 'WATCH';
+}
+
+export function netMarginPoints(marginPct) {
+  if (!Number.isFinite(marginPct) || marginPct <= 0) return 0;
+  if (marginPct < 5) return round1((marginPct / 5) * 10);
+  if (marginPct < 10) return round1(10 + ((marginPct - 5) / 5) * 10);
+  if (marginPct < 20) return round1(20 + ((marginPct - 10) / 10) * 25);
+  return 45;
+}
+
+export function executableDepthPoints(quantity) {
+  if (!Number.isFinite(quantity) || quantity <= 0) return null;
+  if (quantity < 2) return 10;
+  if (quantity < 5) return 15;
+  if (quantity < 10) return 20;
+  return 25;
+}
+
+export function economicLiquidityPoints({ sampleCount, latestSaleAgeDays } = {}) {
+  if (!Number.isInteger(sampleCount) || sampleCount < 0) return null;
+  let points = sampleCount === 0 ? 0 : sampleCount < 5 ? 5 : sampleCount < 10 ? 10 : sampleCount < 20 ? 15 : 20;
+  if (Number.isFinite(latestSaleAgeDays)) {
+    if (latestSaleAgeDays > 180) points = 0;
+    else if (latestSaleAgeDays > 90) points = Math.min(points, 5);
+    else if (latestSaleAgeDays > 30) points = Math.min(points, 10);
+  } else if (sampleCount > 0) {
+    return null;
+  }
+  return points;
+}
+
+export function spreadFrictionPoints(spreadPct) {
+  if (!Number.isFinite(spreadPct)) return null;
+  if (spreadPct <= 0) return 10;
+  if (spreadPct <= 5) return 8;
+  if (spreadPct <= 10) return 6;
+  if (spreadPct <= 20) return 3;
+  return 0;
+}
+
+export function applyEconomicScoring(item, evidence) {
+  if (evidence?.status !== 'COMPLETE') {
+    return {
+      ...item,
+      economic_action_score: null,
+      action_tier: 'BLOCKED',
+      economic_evidence: {
+        ...item.economic_evidence,
+        ...evidence,
+        score: null,
+        status: 'BLOCKED'
+      }
+    };
+  }
+
+  const components = {
+    net_margin: {
+      points: netMarginPoints(evidence.estimated_margin_pct),
+      max: ECONOMIC_WEIGHTS.net_margin,
+      evidence: 'CONSERVATIVE_DMARKET_NET_MARGIN'
+    },
+    executable_buy_side_depth: {
+      points: executableDepthPoints(evidence.depth_5pct_quantity),
+      max: ECONOMIC_WEIGHTS.executable_buy_side_depth,
+      evidence: 'DMARKET_TARGET_DEPTH_5PCT'
+    },
+    liquidity: {
+      points: economicLiquidityPoints({
+        sampleCount: evidence.sales_history?.sample_count,
+        latestSaleAgeDays: evidence.sales_history?.latest_sale_age_days
+      }),
+      max: ECONOMIC_WEIGHTS.liquidity,
+      evidence: 'DMARKET_EXECUTED_SALES'
+    },
+    spread_exit_friction: {
+      points: spreadFrictionPoints(evidence.spread_pct),
+      max: ECONOMIC_WEIGHTS.spread_exit_friction,
+      evidence: 'ASK_TO_EXECUTABLE_TARGET_SPREAD'
+    }
+  };
+  if (Object.values(components).some(component => !Number.isFinite(component.points))) {
+    return {
+      ...item,
+      economic_action_score: null,
+      action_tier: 'BLOCKED',
+      economic_evidence: {
+        ...evidence,
+        score: null,
+        status: 'BLOCKED',
+        blocker: 'ECONOMIC_COMPONENT_INCOMPLETE',
+        components
+      }
+    };
+  }
+
+  const economicScore = round1(Object.values(components).reduce((sum, component) => sum + component.points, 0));
+  const liquidityQualityPoints = round1((components.liquidity.points / ECONOMIC_WEIGHTS.liquidity) * QUALITY_WEIGHTS.liquidity);
+  const qualityComponents = {
+    ...item.quality_evidence.components,
+    liquidity: {
+      points: liquidityQualityPoints,
+      max: QUALITY_WEIGHTS.liquidity,
+      evidence: 'DMARKET_EXECUTED_SALES'
+    }
+  };
+  const known = Object.values(qualityComponents).filter(component => Number.isFinite(component.points));
+  const qualityScore = round1(known.reduce((sum, component) => sum + component.points, 0));
+  const knownWeight = known.reduce((sum, component) => sum + component.max, 0);
+  const actionable = (item.actionability_blockers ?? []).length === 0;
+
+  return {
+    ...item,
+    quality_score: qualityScore,
+    economic_action_score: economicScore,
+    action_tier: deriveActionTier({
+      qualityScore,
+      economicScore,
+      fresh: evidence.skew_seconds <= 180,
+      actionable
+    }),
+    quality_evidence: {
+      ...item.quality_evidence,
+      score: qualityScore,
+      status: knownWeight < 100 ? 'PARTIAL' : 'COMPLETE',
+      known_weight: knownWeight,
+      unavailable_weight: 100 - knownWeight,
+      components: qualityComponents
+    },
+    economic_evidence: {
+      ...evidence,
+      score: economicScore,
+      status: 'COMPLETE',
+      components
+    }
+  };
 }
 
 export function scoreQuality(item) {
