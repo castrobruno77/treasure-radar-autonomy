@@ -50,7 +50,6 @@ export function deriveActionTier({ qualityScore, economicScore, fresh = true, ac
 export function scoreQuality(item) {
   const blockers = [];
   if (item?.status !== 'CERTIFIED') blockers.push('COMPARATOR_NOT_CERTIFIED');
-  if (!item?.listing_url) blockers.push('LISTING_URL_REQUIRED');
   if (item?.source !== 'DMarket') blockers.push('SOURCE_NOT_VALIDATED');
 
   const components = {
@@ -81,6 +80,9 @@ export function scoreQuality(item) {
 
 export function applyScoring(item) {
   const quality = scoreQuality(item);
+  const actionabilityBlockers = [];
+  if (!item?.listing_url) actionabilityBlockers.push('LISTING_URL_REQUIRED');
+  if (item?.status !== 'CERTIFIED') actionabilityBlockers.push('COMPARATOR_NOT_CERTIFIED');
   const economic = {
     score: null,
     status: 'BLOCKED',
@@ -99,7 +101,13 @@ export function applyScoring(item) {
     scoring_version: SCORING_VERSION,
     quality_score: quality.score,
     economic_action_score: economic.score,
-    action_tier: deriveActionTier({ qualityScore: quality.score, economicScore: economic.score, fresh: true, actionable: false }),
+    action_tier: deriveActionTier({
+      qualityScore: quality.score,
+      economicScore: economic.score,
+      fresh: true,
+      actionable: actionabilityBlockers.length === 0
+    }),
+    actionability_blockers: actionabilityBlockers,
     quality_evidence: quality,
     economic_evidence: economic
   };
