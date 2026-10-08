@@ -59,15 +59,18 @@ test('target normalization uses only exact-title generic executable targets', ()
   assert.deepEqual(normalized,{best_bid_usd:15,best_bid_quantity:3,depth_5pct_quantity:3,observed_levels:2});
 });
 
-test('fee basis never assumes zero and uses the documented CS2 maximum conservatively', () => {
-  assert.deepEqual(conservativeFee({defaultFee:{fraction:'0.02',minAmount:0}}),{
+test('fee basis never assumes zero and does not guess undocumented minAmount units', () => {
+  assert.deepEqual(conservativeFee({defaultFee:{fraction:'0.02',minAmount:1}}),{
     api_default_fraction:0.02,
+    api_min_amount_raw:1,
+    api_min_amount_interpretation:'UNSPECIFIED_NOT_USED',
     seller_fee_fraction:0.10,
     buyer_fee_fraction:0,
-    basis:'DMARKET_API_DEFAULT_PLUS_DOCUMENTED_CS2_MAX_2026_03',
+    basis:'DMARKET_API_DEFAULT_PLUS_PUBLIC_CS2_MAX_10_PERCENT_2026_03',
     reduced_fee_ignored_conservatively:true
   });
-  assert.equal(conservativeFee({defaultFee:{fraction:'0.02',minAmount:1}}),null);
+  assert.equal(conservativeFee({defaultFee:{fraction:'bad',minAmount:1}}),null);
+  assert.equal(conservativeFee({defaultFee:{fraction:'0.02',minAmount:-1}}),null);
 });
 
 test('sales history remains observed evidence with recency', () => {

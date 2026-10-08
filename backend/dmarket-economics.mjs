@@ -111,16 +111,21 @@ export function normalizeTargets(payload, title) {
 
 export function conservativeFee(payload) {
   const fraction = Number(payload?.defaultFee?.fraction);
-  const minAmount = Number(payload?.defaultFee?.minAmount ?? 0);
+  const minAmount = Number(payload?.defaultFee?.minAmount);
   if (!Number.isFinite(fraction) || fraction < 0 || fraction > 0.5) return null;
-  // DMarket documents minAmount but not its currency unit in this response contract.
-  // Any non-zero value is therefore treated as unresolved rather than guessed.
-  if (!Number.isFinite(minAmount) || minAmount !== 0) return null;
+  if (!Number.isFinite(minAmount) || minAmount < 0) return null;
+
+  // DMarket's public terms cap transaction fees at 10% of transaction value,
+  // while the CS2 fee guide states sell fees normally range from 2% to 10%.
+  // The customized-fees schema exposes minAmount without documenting its unit,
+  // so we preserve it as raw evidence and do not convert or apply it.
   return {
     api_default_fraction: fraction,
+    api_min_amount_raw: minAmount,
+    api_min_amount_interpretation: 'UNSPECIFIED_NOT_USED',
     seller_fee_fraction: Math.max(fraction, DMARKET_CONSERVATIVE_MAX_SELL_FEE_FRACTION),
     buyer_fee_fraction: DMARKET_BUYER_FEE_FRACTION,
-    basis: 'DMARKET_API_DEFAULT_PLUS_DOCUMENTED_CS2_MAX_2026_03',
+    basis: 'DMARKET_API_DEFAULT_PLUS_PUBLIC_CS2_MAX_10_PERCENT_2026_03',
     reduced_fee_ignored_conservatively: true
   };
 }
