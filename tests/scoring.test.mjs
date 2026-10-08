@@ -1,0 +1,71 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  SCORING_VERSION,
+  QUALITY_WEIGHTS,
+  ECONOMIC_WEIGHTS,
+  applyScoring,
+  comparatorEvidencePoints,
+  deriveActionTier,
+  floatQualityPoints,
+  priceEdgePoints
+} from '../backend/scoring.mjs';
+
+const item = (overrides = {}) => ({
+  id: 'dmarket:test',
+  source: 'DMarket',
+  collection: 'The 2021 Mirage Collection',
+  rarity: 'Consumer Grade',
+  market_hash_name: 'Test (Factory New)',
+  normalized_float: 0.03,
+  robust_gap_pct: 50,
+  peer_count: 4,
+  listing_url: 'https://dmarket.com/ingame-items/item-list/csgo-skins?test=1',
+  captured_at: '2026-10-08T00:00:00.000Z',
+  status: 'CERTIFIED',
+  ...overrides
+});
+
+test('v0.2 canonical weights remain separate and total 100 each', () => {
+  assert.equal(Object.values(QUALITY_WEIGHTS).reduce((a,b)=>a+b,0), 100);
+  assert.equal(Object.values(ECONOMIC_WEIGHTS).reduce((a,b)=>a+b,0), 100);
+});
+
+test('quality score uses only observed/validated evidence and leaves unavailable weights N-D', () => {
+  const scored = applyScoring(item());
+  assert.equal(scored.scoring_version, SCORING_VERSION);
+  assert.equal(scored.quality_evidence.components.price_edge.points, 30);
+  assert.equal(scored.quality_evidence.components.float_quality.points, 19.4);
+  assert.equal(scored.quality_evidence.components.comparator_evidence.points, 8);
+  assert.equal(scored.quality_evidence.components.market_data_confidence.points, 10);
+  assert.equal(scored.quality_evidence.components.scarcity_urgency.points, null);
+  assert.equal(scored.quality_evidence.components.liquidity.points, null);
+  assert.equal(scored.quality_evidence.known_weight, 80);
+  assert.equal(scored.quality_evidence.unavailable_weight, 20);
+  assert.equal(scored.quality_score, 67.4);
+  assert.equal(scored.economic_action_score, null);
+  assert.equal(scored.economic_evidence.status, 'BLOCKED');
+  assert.equal(scored.action_tier, 'BLOCKED');
+});
+
+test('historical evidence thresholds are conservatively rescaled into v0.2 weights', () => {
+  assert.deepEqual([9,10,15,25,40].map(priceEdgePoints), [0,7.5,15,22.5,30]);
+  assert.deepEqual([3,4,6,10,20].map(comparatorEvidencePoints), [null,8,12,16,20]);
+  assert.equal(floatQualityPoints(0), 20);
+  assert.equal(floatQualityPoints(1), 0);
+});
+
+test('hard gates prevent ranking when comparator or listing identity is not actionable', () => {
+  assert.equal(applyScoring(item({ status:'REJECTED' })).quality_score, null);
+  assert.equal(applyScoring(item({ listing_url:null })).quality_score, null);
+  assert.equal(applyScoring(item({ peer_count:3 })).quality_score, null);
+});
+
+test('action tiers require both scores and preserve freshness/actionability gates', () => {
+  assert.equal(deriveActionTier({ qualityScore:90, economicScore:85 }), 'DIAMOND');
+  assert.equal(deriveActionTier({ qualityScore:75, economicScore:70 }), 'TREASURE');
+  assert.equal(deriveActionTier({ qualityScore:75, economicScore:60 }), 'WATCH');
+  assert.equal(deriveActionTier({ qualityScore:90, economicScore:85, fresh:false }), 'WATCH');
+  assert.equal(deriveActionTier({ qualityScore:90, economicScore:85, actionable:false }), 'WATCH');
+  assert.equal(deriveActionTier({ qualityScore:90, economicScore:null }), 'BLOCKED');
+});
