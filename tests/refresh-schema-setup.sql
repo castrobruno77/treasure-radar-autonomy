@@ -7,3 +7,4 @@ grant usage on schema public to service_role;
 \i database/refresh.sql
 
 \i database/telemetry.sql
+\i database/economic-scoring.sql
