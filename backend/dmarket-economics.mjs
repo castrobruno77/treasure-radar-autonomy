@@ -263,10 +263,11 @@ export async function enrichDmarketEconomics(snapshot, options = {}) {
     return snapshot;
   }
 
-  const feePromise = client ? client.feeSchedule().catch(error => { throw error; }) : null;
+  let feePromise = null;
   for (let i=0; i<snapshot.items.length; i++) {
     const item = snapshot.items[i];
     if (item.status !== 'CERTIFIED' || !Number.isFinite(item.quality_score)) continue;
+    if (client && !feePromise) feePromise = client.feeSchedule();
     const evidence = await observeDmarketEconomics(item, { ...options, client, feePromise });
     snapshot.items[i] = applyEconomicScoring(item, evidence);
   }
