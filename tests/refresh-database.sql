@@ -96,6 +96,12 @@ begin
     'comparable_count',9,
     'candidate_count',5,
     'certified_count',2,
+    'quality_scored_count',2,
+    'quality_score_avg',74.25,
+    'economic_scored_count',0,
+    'economic_score_avg',null,
+    'economic_blocked_count',2,
+    'actionable_count',0,
     'status','COMPLETE',
     'retry_count',0,
     'rate_limit_hit',false,
@@ -106,7 +112,10 @@ begin
   assert r->>'status'='RECORDED', 'telemetry recorded';
   assert (select count(*)=1 from public.tsr_run_telemetry), '30 day telemetry retention cleanup';
   assert (select certified_count=2 and candidate_count=5 and snapshot_age_at_start=245
-    from public.tsr_run_telemetry limit 1), 'telemetry counters queryable';
+      and quality_scored_count=2 and quality_score_avg=74.25
+      and economic_scored_count=0 and economic_score_avg is null
+      and economic_blocked_count=2 and actionable_count=0
+    from public.tsr_run_telemetry limit 1), 'telemetry counters and staged scores queryable';
 end;
 $$;
 reset role;
