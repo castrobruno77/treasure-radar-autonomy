@@ -8,6 +8,13 @@ export const COLLECTION = 'The 2021 Mirage Collection';
 export const RARITY = 'Consumer Grade';
 const statuses = { CERTIFIED_SURVIVOR: 'CERTIFIED', REJECTED_BY_COMPARATOR: 'REJECTED', INSUFFICIENT_EVIDENCE: 'INSUFFICIENT' };
 
+export function dmarketListingUrl(offerId) {
+  if (typeof offerId !== 'string' || !offerId.trim()) return null;
+  const url = new URL('https://dmarket.com/ingame-items/item-list/csgo-skins');
+  url.searchParams.set('userOfferId', offerId);
+  return url.href;
+}
+
 // Translate evidence, never recalculate or relax the approved economic rule.
 export function normalizeScan(scan, now = Date.now()) {
   if (scan?.ops !== 'OPS-045' || scan.mode !== 'MINI_SCAN_ROBUST_COMPARATOR' ||
@@ -41,7 +48,8 @@ export function normalizeScan(scan, now = Date.now()) {
     try {
       const u = new URL(x.listing_link);
       if (u.protocol === 'https:' && ['dmarket.com', 'www.dmarket.com'].includes(u.hostname) && !u.username && !u.password) listing = u.href;
-    } catch { /* Missing deep links are not fabricated. */ }
+    } catch { /* Ignore missing/invalid upstream deep links. */ }
+    if (!listing) listing = dmarketListingUrl(x.offer_id);
     return applyScoring({
       id: `dmarket:${x.offer_id}`, source: 'DMarket', collection: COLLECTION, rarity: RARITY,
       market_hash_name: `${x.variant === 'SOUVENIR' ? 'Souvenir ' : ''}${x.skin}${x.wear ? ` (${x.wear})` : ''}`,
