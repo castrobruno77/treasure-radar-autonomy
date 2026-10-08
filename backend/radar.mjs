@@ -1,11 +1,13 @@
 import { applyScoring } from './scoring.mjs';
 import { enrichDmarketEconomics } from './dmarket-economics.mjs';
+import { PILOT_CAPABILITY, resolveScope, comparatorPoolKey } from './collection-registry.mjs';
+import { pilotScanPlan } from './scan-plan.mjs';
 export const LEGACY_ORIGIN = 'https://scale-radar.scale-cs2.deno.net';
 export const REVISION = 'OPS045_ROBUST_COMPARATOR_V1';
-export const COLLECTOR_VERSION = 'TREASURE_RADAR_DMARKET_V2';
+export const COLLECTOR_VERSION = 'TREASURE_RADAR_DMARKET_V3_REGISTRY';
 export const SCAN_TELEMETRY = Symbol('SCAN_TELEMETRY');
-export const COLLECTION = 'The 2021 Mirage Collection';
-export const RARITY = 'Consumer Grade';
+export const COLLECTION = pilotScanPlan().collection;
+export const RARITY = pilotScanPlan().rarity;
 const statuses = { CERTIFIED_SURVIVOR: 'CERTIFIED', REJECTED_BY_COMPARATOR: 'REJECTED', INSUFFICIENT_EVIDENCE: 'INSUFFICIENT' };
 
 export function dmarketListingUrl(offerId) {
@@ -17,10 +19,12 @@ export function dmarketListingUrl(offerId) {
 
 // Translate evidence, never recalculate or relax the approved economic rule.
 export function normalizeScan(scan, now = Date.now()) {
+  const plan = pilotScanPlan();
+  const scope = resolveScope({ collection: scan?.params?.collection, rarity: scan?.params?.rarity }, PILOT_CAPABILITY);
   if (scan?.ops !== 'OPS-045' || scan.mode !== 'MINI_SCAN_ROBUST_COMPARATOR' ||
       scan.status !== 'PASS' || scan.params?.source !== 'DMarket' ||
-      scan.params.collection !== COLLECTION || scan.params.rarity !== RARITY ||
-      scan.jobs?.planned !== 10 || scan.jobs.completed !== 10 || scan.jobs.error !== 0 ||
+      scope.collection_id !== plan.collection_id || scope.rarity !== plan.rarity ||
+      scan.jobs?.planned !== plan.jobs || scan.jobs.completed !== plan.jobs || scan.jobs.error !== 0 ||
       !Array.isArray(scan.errors) || scan.errors.length || !Array.isArray(scan.opportunities)) {
     throw new Error('INCOMPLETE_OR_UNSUPPORTED_SCAN');
   }
@@ -31,6 +35,19 @@ export function normalizeScan(scan, now = Date.now()) {
     const status = statuses[x.classification];
     const captured = Date.parse(x.timestamp);
     const r = x.robust_comparator;
+    const itemScope = resolveScope({ collection: x.collection === undefined ? scope.collection : x.collection,
+      rarity: x.rarity === undefined ? scope.rarity : x.rarity, variant: x.variant }, PILOT_CAPABILITY);
+    if (itemScope.collection_id !== scope.collection_id || itemScope.rarity !== scope.rarity ||
+        /^(?:Souvenir|StatTrak(?:\u2122)?)\s/i.test(x.skin ?? '')) throw new Error('MIXED_SCAN_SCOPE');
+    const poolKey = comparatorPoolKey(itemScope, x.skin);
+    // Legacy aggregate baselines are trusted only behind the pinned revision
+    // gate. If a provider supplies dimensions, never ignore contradictory ones.
+    if (r?.collection !== undefined || r?.rarity !== undefined || r?.variant !== undefined) {
+      const peerScope = resolveScope({ collection: r.collection === undefined ? scope.collection : r.collection,
+        rarity: r.rarity === undefined ? scope.rarity : r.rarity,
+        variant: r.variant === undefined ? x.variant : r.variant }, PILOT_CAPABILITY);
+      if (comparatorPoolKey(peerScope, x.skin) !== poolKey) throw new Error('MIXED_COMPARATOR_POOL');
+    }
     if (!status || typeof x.offer_id !== 'string' || !x.offer_id || ids.has(x.offer_id) ||
         typeof x.skin !== 'string' || !x.skin || !['NORMAL', 'SOUVENIR'].includes(x.variant) ||
         !Number.isFinite(x.price_usd) || x.price_usd <= 0 ||
@@ -52,6 +69,8 @@ export function normalizeScan(scan, now = Date.now()) {
     if (!listing) listing = dmarketListingUrl(x.offer_id);
     return applyScoring({
       id: `dmarket:${x.offer_id}`, source: 'DMarket', collection: COLLECTION, rarity: RARITY,
+      collection_id: itemScope.collection_id, collection_priority_tier: itemScope.collection_priority_tier,
+      comparator_pool_key: poolKey,
       market_hash_name: `${x.variant === 'SOUVENIR' ? 'Souvenir ' : ''}${x.skin}${x.wear ? ` (${x.wear})` : ''}`,
       is_souvenir: x.variant === 'SOUVENIR', is_stattrak: false, wear: x.wear ?? null,
       float_value: x.float, normalized_float: x.normalized_float, price_usd: x.price_usd,
@@ -114,13 +133,14 @@ export function upstreamFailure(response, now = Date.now()) {
 }
 
 export async function collectScan(fetcher = fetch, { env = process.env, now = Date.now } = {}) {
+  const plan = pilotScanPlan();
   const health = await fetcher(`${LEGACY_ORIGIN}/health`, { signal: AbortSignal.timeout(10000), redirect: 'error' });
   if (!health.ok) throw upstreamFailure(health);
   const h = await health.json();
   if (!h.ok || h.revision !== REVISION) throw Object.assign(new Error('UPSTREAM_REVISION_GATE'), { blocked: true });
   const u = new URL('/rare-scan', LEGACY_ORIGIN);
-  for (const [k, v] of Object.entries({ source: 'DMarket', collection: COLLECTION, rarity: RARITY,
-    max_jobs: 10, concurrency: 2, timeout_ms: 12000, deadline_ms: 85000 })) u.searchParams.set(k, v);
+  for (const [k, v] of Object.entries({ source: plan.source, collection: plan.collection, rarity: plan.rarity,
+    max_jobs: plan.jobs, concurrency: 2, timeout_ms: 12000, deadline_ms: 85000 })) u.searchParams.set(k, v);
   const response = await fetcher(u, { signal: AbortSignal.timeout(95000), redirect: 'error' });
   if (!response.ok) throw upstreamFailure(response);
   const raw = await response.json();

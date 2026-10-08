@@ -26,6 +26,15 @@ jobs:
           node --test tests/*.test.mjs
       - name: Chromium popup smoke
         run: node scripts/popup-chromium-smoke.mjs
+  registry-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Canonical registry and runtime contracts (offline)
+        run: node --test tests/collection-registry.test.mjs tests/registry-runtime.test.mjs
   database:
     runs-on: ubuntu-latest
     services:
