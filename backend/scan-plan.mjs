@@ -2,7 +2,7 @@ import { resolveCollection, resolveScope, TIER_WEIGHTS, RARITY_SCOPE, PILOT_CAPA
 
 // Static allocation only. Largest remainders keep the exact integer budget;
 // unavailable tiers are omitted and their weight redistributed to available tiers.
-export function planScans({ budget, capabilities = [PILOT_CAPABILITY] }) {
+export function planScans({ budget, capabilities = [PILOT_CAPABILITY], compareScopes = () => 0 }) {
   if (!Number.isSafeInteger(budget) || budget < 0 || budget > 10000) throw new Error('INVALID_SCAN_BUDGET');
   const scopes = new Map();
   for (const capability of capabilities) {
@@ -27,7 +27,7 @@ export function planScans({ budget, capabilities = [PILOT_CAPABILITY] }) {
   const result = [];
   for (const { tier, jobs } of allocations) {
     const candidates = [...scopes.values()].filter(s => s.collection_priority_tier === tier)
-      .sort((a, b) => RARITY_SCOPE.indexOf(a.rarity) - RARITY_SCOPE.indexOf(b.rarity) || a.collection_id.localeCompare(b.collection_id));
+      .sort((a, b) => compareScopes(a, b) || RARITY_SCOPE.indexOf(a.rarity) - RARITY_SCOPE.indexOf(b.rarity) || a.collection_id.localeCompare(b.collection_id));
     candidates.forEach((scope, i) => {
       const count = Math.floor(jobs / candidates.length) + (i < jobs % candidates.length ? 1 : 0);
       if (count) result.push(Object.freeze({ ...scope, jobs: count }));

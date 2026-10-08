@@ -2,9 +2,10 @@ import { applyScoring } from './scoring.mjs';
 import { enrichDmarketEconomics } from './dmarket-economics.mjs';
 import { PILOT_CAPABILITY, resolveScope, comparatorPoolKey } from './collection-registry.mjs';
 import { pilotScanPlan } from './scan-plan.mjs';
+import { TELEMETRY_SCOPE_VERSION } from './adaptive-scan-plan.mjs';
 export const LEGACY_ORIGIN = 'https://scale-radar.scale-cs2.deno.net';
 export const REVISION = 'OPS045_ROBUST_COMPARATOR_V1';
-export const COLLECTOR_VERSION = 'TREASURE_RADAR_DMARKET_V3_REGISTRY';
+export const COLLECTOR_VERSION = TELEMETRY_SCOPE_VERSION;
 export const SCAN_TELEMETRY = Symbol('SCAN_TELEMETRY');
 export const COLLECTION = pilotScanPlan().collection;
 export const RARITY = pilotScanPlan().rarity;
@@ -88,7 +89,6 @@ export function normalizeScan(scan, now = Date.now()) {
 
 export function attachScanTelemetry(snapshot, scan) {
   const items = snapshot.items;
-  const variants = [...new Set(scan.opportunities.map(x => x.variant))].sort();
   const qualityScores = items.map(x => x.quality_score).filter(Number.isFinite);
   const economicScores = items.map(x => x.economic_action_score).filter(Number.isFinite);
   const qualityScoreAvg = qualityScores.length ? Math.round((qualityScores.reduce((a,b)=>a+b,0) / qualityScores.length) * 100) / 100 : null;
@@ -100,7 +100,9 @@ export function attachScanTelemetry(snapshot, scan) {
       source: 'DMarket',
       collection: COLLECTION,
       rarity: RARITY,
-      variant_scope: variants.length ? variants.join('|') : 'NONE',
+      // Planned coverage, including empty results. V3 recorded observed variants
+      // and cannot prove which variant scopes were scanned when yield was zero.
+      variant_scope: pilotScanPlan().variants.join('|'),
       jobs_planned: scan.jobs.planned,
       jobs_completed: scan.jobs.completed,
       // The upstream mini-scan exposes candidate listing observations, not full market depth.
