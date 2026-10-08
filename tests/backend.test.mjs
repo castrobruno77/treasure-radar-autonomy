@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { FileStore } from '../backend/store.mjs';
 import { createHandler } from '../backend/handler.mjs';
 import { startServer } from '../backend/server.mjs';
-import { normalizeScan, collectScan, COLLECTION, RARITY, REVISION } from '../backend/radar.mjs';
+import { normalizeScan, collectScan, COLLECTION, RARITY, REVISION, dmarketListingUrl } from '../backend/radar.mjs';
 import { fetchOpportunities } from '../extension/api.js';
 import { deriveHealthState } from '../extension/health-state.js';
 
@@ -20,11 +20,15 @@ function scan() {
         listing_link: 'javascript:alert(1)', robust_comparator: {rule: 'CHEAPEST_EQUAL_OR_BETTER_NORMALIZED_FLOAT', peer_count: 4, gap_pct: 50, cheapest_price_usd: 1} }
     ] };
 }
-test('adapter preserves evidence, rejects incomplete/error/invalid certification and unsafe links', () => {
+test('adapter preserves evidence, rejects incomplete/error/invalid certification and safely derives DMarket listing links', () => {
+  assert.equal(dmarketListingUrl('offer-123'), 'https://dmarket.com/ingame-items/item-list/csgo-skins?userOfferId=offer-123');
   const snapshot = normalizeScan(scan(), time);
-  assert.equal(snapshot.items[0].listing_url, null);
+  assert.equal(snapshot.items[0].listing_url, 'https://dmarket.com/ingame-items/item-list/csgo-skins?userOfferId=test');
   assert.equal(snapshot.items[0].price_usd, 0.5);
   assert.equal(snapshot.items[0].status, 'CERTIFIED');
+  const provided = scan();
+  provided.opportunities[0].listing_link = 'https://www.dmarket.com/ingame-items/item-list/csgo-skins?userOfferId=upstream';
+  assert.equal(normalizeScan(provided, time).items[0].listing_url, provided.opportunities[0].listing_link);
   for (const mutate of [s=>s.status='PARTIAL', s=>s.jobs.error=1, s=>s.params.source='CSFloat',
     s=>s.opportunities[0].robust_comparator.peer_count=3, s=>s.opportunities[0].timestamp='bad',
     s=>s.opportunities.push(s.opportunities[0]), s=>s.opportunities[0].variant='STATTRAK']) {
