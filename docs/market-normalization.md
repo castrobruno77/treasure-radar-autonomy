@@ -2,6 +2,11 @@
 
 These normalizers consume a sanitized internal envelope, not an unmodified live API response. Fixtures are synthetic. Neither source is connected to the production feed; both remain VALIDATING.
 
+The later [#57 Waxpeer read-only adapter](waxpeer-readonly.md) handles the real
+public CSV/bid schemas separately, with credential-gated exact-float preparation.
+The historical `normalizeWaxpeer` envelope below is not an authorized float feed
+and must not be used to bypass the #57 source/provenance gates.
+
 | Contract | CS.Deals | Waxpeer |
 | --- | --- | --- |
 | Monetary unit | integer USD cents, /100 | integer USD mills, /1000 |

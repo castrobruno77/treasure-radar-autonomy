@@ -44,6 +44,15 @@ jobs:
           node-version: "22"
       - name: Adaptive planning and durable refresh integration (offline)
         run: node --test tests/adaptive-scan-plan.test.mjs tests/refresh.test.mjs tests/telemetry.test.mjs tests/registry-runtime.test.mjs
+  waxpeer-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Read-only Waxpeer identity, timing, fee and non-promotion contracts
+        run: node --test tests/waxpeer.test.mjs tests/dmarket-economics.test.mjs tests/scoring.test.mjs tests/collection-registry.test.mjs
   database:
     runs-on: ubuntu-latest
     services:

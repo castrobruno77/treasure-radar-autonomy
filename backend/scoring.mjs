@@ -87,6 +87,11 @@ export function spreadFrictionPoints(spreadPct) {
 }
 
 export function applyEconomicScoring(item, evidence) {
+  // #57: reference-only exits cannot enter the certified DMarket scoring path,
+  // even if a caller mistakenly marks the reference status COMPLETE.
+  if (evidence?.status === 'COMPLETE' && evidence.source !== 'DMarket') {
+    evidence = { ...evidence, status: 'BLOCKED', blocker: 'EXIT_SOURCE_NOT_VALIDATED' };
+  }
   if (evidence?.status !== 'COMPLETE') {
     return {
       ...item,
