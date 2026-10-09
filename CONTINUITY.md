@@ -21,6 +21,21 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### #59 CS.Deals bounded read-only adapter — 2026-10-09
+
+Resumption inspected a clean main at `01581abb26e3228db9d371004c12c48e87acc607`:
+no partial CS.Deals branch, uncommitted files or unpublished implementation.
+Work branch: `feature/issue-59-csdeals-readonly`. #59 MARKET is already complete;
+explicit DIRECAO engineering authorization governs this separate delivery.
+Reconciled #37/#38/#39/#42/#55/#57 and new factual #62/#63/#64.
+See [CS.Deals contract and recovery](docs/csdeals-readonly.md). Adapter-local
+catalog validates native identity only; no planner/feed activation. Historical
+PATIENT_RESALE stays REFERENCE_ONLY/BLOCKED, SOURCE_VALIDATING and FEES_PARTIAL.
+No executable bid or economic score promotion. Existing Railway key may be
+referenced by scale-scheduler; never expose or duplicate its value. Final exact
+PR/head/merge/CI and live runtime evidence must be recorded on #59/#42 before
+claiming completion. STOP before P0 activation or Phase 4.
+
 ### #57 bounded Waxpeer read-only adapter — 2026-10-08
 
 The factual MARKET contract #57 and explicit subsequent DIREÇÃO authorization

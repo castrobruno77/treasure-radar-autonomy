@@ -1,5 +1,10 @@
 # Bounded next cycle
 
+Current bounded unit (2026-10-09): #59 CS.Deals read-only SOURCE_VALIDATING.
+See `docs/csdeals-readonly.md` and `CONTINUITY.md`. #62/#63/#64 are validation
+inputs, not activation. Close with exact CI/merge/live evidence on #59/#42;
+STOP before P0 activation, Phase 4 or any next issue. The queue below is historical.
+
 ## Current executable queue after infrastructure recovery
 
 - #18: offline normalizers and seven regression tests merged in PR #24. Finish authoritative eligibility/full source-pagination evidence; keep both sources VALIDATING and excluded from feed. This remaining evidence work is not a new credential or production gate.
