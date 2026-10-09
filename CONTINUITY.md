@@ -21,6 +21,18 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### #57 bounded Waxpeer read-only adapter — 2026-10-08
+
+The factual MARKET contract #57 and explicit subsequent DIREÇÃO authorization
+govern this implementation, based on main `f4d53625015d16e3ea0980134cbb4d188150d2f5`.
+See [Waxpeer capability and evidence](docs/waxpeer-readonly.md). Public listing
+sample and best bids remain SOURCE_VALIDATING / FEES_PARTIAL / BID_DEPTH_PARTIAL;
+no executable bid or Waxpeer-only score promotion. Exact float requires a separate
+authorized/configured key; none was requested or used. No scheduler/feed expansion,
+migration or deployment. Final PR/head/merge/CI evidence belongs on #57 and #42.
+STOP after this bounded unit; certified exit and the remaining roadmap need their
+own evidence/authorization. The #55 checkpoint below remains historical evidence.
+
 ### #55 bounded adaptive scan planning — 2026-10-08
 
 Canonical scope is issue #55 and roadmap #42, after #39 / PR #54. The bounded
