@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { collectScan, SCAN_TELEMETRY, COLLECTOR_VERSION, COLLECTION, RARITY, REVISION } from './radar.mjs';
 import { validateOpportunityPayload } from '../extension/api.js';
+import { adaptiveScanPlan, WINDOW_MS, MAX_TELEMETRY_ROWS } from './adaptive-scan-plan.mjs';
+import { pilotScanPlan } from './scan-plan.mjs';
 
 export class RefreshCoordinator {
   constructor({ env = process.env, fetcher = fetch } = {}) {
@@ -22,6 +24,20 @@ export class RefreshCoordinator {
     return result;
   }
   claim(owner) { return this.rpc('tsr_refresh_claim', { p_owner: owner }); }
+  async scanPlan(now = Date.now()) {
+    // Server-only lightweight #40 rows, bounded to #33's daily attempt ceiling.
+    // No snapshot bodies, new retention, grants, credentials or schema changes.
+    const query = new URLSearchParams({ source: 'eq.DMarket',
+      started_at: `gte.${new Date(now - WINDOW_MS).toISOString()}`,
+      select: 'id,source,collection,rarity,variant_scope,started_at,finished_at,status,certified_count,candidate_count,economic_scored_count,actionable_count,rate_limit_hit,snapshot_age_at_start,collector_version',
+      order: 'started_at.desc,id.asc', limit: String(MAX_TELEMETRY_ROWS) });
+    const response = await this.fetcher(`${this.url}/rest/v1/tsr_run_telemetry?${query}`, {
+      redirect: 'error', signal: AbortSignal.timeout(5000),
+      headers: { apikey: this.key, Authorization: `Bearer ${this.key}` }
+    });
+    if (!response.ok) throw new Error('PLANNER_TELEMETRY_UNAVAILABLE');
+    return adaptiveScanPlan({ budget: 10, telemetry: await response.json(), now })[0];
+  }
   async snapshotAgeAtStart(now = Date.now()) {
     const response = await this.fetcher(`${this.url}/rest/v1/tsr_runs?status=eq.COMPLETE&select=snapshot&order=finished_at.desc&limit=1`, {
       redirect: 'error', signal: AbortSignal.timeout(5000),
@@ -85,6 +101,15 @@ export function createRefreshWorker({ coordinator, collect = collectScan, log = 
     let startedMs = null;
     let snapshotAgeAtStart = null;
     try {
+      // Check persisted history before consuming an attempt/lease. On restarts
+      // the same history produces the same due time. The durable #33 claim is
+      // still authoritative for budget, cooldown, backoff and HALTED state.
+      if (typeof coordinator.scanPlan === 'function') {
+        try {
+          const plan = await coordinator.scanPlan(now());
+          if (plan.wait_ms > 0) return { status: 'PLANNED_WAIT', wait_ms: plan.wait_ms };
+        } catch { log(JSON.stringify({ event: 'REMOTE_FEED_PLANNER', status: 'STATIC_FALLBACK' })); }
+      }
       const claim = await coordinator.claim(owner);
       if (claim.status !== 'ACQUIRED') return claim;
       acquired = true;
@@ -147,7 +172,7 @@ export function createRefreshWorker({ coordinator, collect = collectScan, log = 
           source: 'DMarket',
           collection: COLLECTION,
           rarity: RARITY,
-          variant_scope: null,
+          variant_scope: pilotScanPlan().variants.join('|'),
           started_at: new Date(startedMs ?? finishedMs).toISOString(),
           finished_at: new Date(finishedMs).toISOString(),
           duration_ms: Math.max(0, finishedMs - (startedMs ?? finishedMs)),

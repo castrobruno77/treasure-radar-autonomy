@@ -59,5 +59,6 @@ and CI evidence belong in issue #39 and roadmap #42. No production deployment
 is required for this bounded implementation proof; production activation is
 not claimed by these offline contracts.
 
-Adaptive promotion/demotion, new markets, monetization, alerts and auto-buy are
-outside this implementation.
+Adaptive cadence is added by [the bounded #55 planner](adaptive-scan-planning.md),
+which consumes this registry and preserves tier shares. New markets, monetization,
+alerts and auto-buy remain outside these implementations.

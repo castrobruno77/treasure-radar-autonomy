@@ -35,6 +35,15 @@ jobs:
           node-version: "22"
       - name: Canonical registry and runtime contracts (offline)
         run: node --test tests/collection-registry.test.mjs tests/registry-runtime.test.mjs
+  adaptive-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Adaptive planning and durable refresh integration (offline)
+        run: node --test tests/adaptive-scan-plan.test.mjs tests/refresh.test.mjs tests/telemetry.test.mjs tests/registry-runtime.test.mjs
   database:
     runs-on: ubuntu-latest
     services:

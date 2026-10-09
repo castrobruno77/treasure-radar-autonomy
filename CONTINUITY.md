@@ -21,6 +21,19 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### #55 bounded adaptive scan planning — 2026-10-08
+
+Canonical scope is issue #55 and roadmap #42, after #39 / PR #54. The bounded
+implementation reads stored #40/#48 telemetry to set cadence, retaining the #39
+registry and tier job shares. Only DMarket / 2021 Mirage / Consumer is enabled.
+See [adaptive scan planning](docs/adaptive-scan-planning.md) for measurement
+guards, scope versioning, targets, fallback and verification limits. No database
+migration or manual production deployment is included. Merge requires PASS on
+the exact PR head; final CI/merge evidence is recorded on #55 and #42, not inferred
+from this implementation checkpoint. Rollback: revert the #55 PR; existing
+telemetry remains compatible and intact. Do not start the next issue under this
+authorization. Earlier checkpoints below are historical, not the current queue.
+
 ### #33 recurring freshness — implementation checkpoint
 
 The user confirmed the initial remote feed online with a real Steam session and
