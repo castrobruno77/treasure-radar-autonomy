@@ -21,6 +21,16 @@ Continuity document ID: `1v2Z5r4Kb_CY4BVjcuq8vYg18lmVDBcCEX4hAXjw1Zak`
 
 ## Current checkpoint
 
+### #67 CS.Deals final bounded hardening — 2026-10-10
+
+Branch `fix/csdeals-final-hardening` from canonical PR #65 main. Sanitized live
+diagnostic proves modern `steam://run/730//` masked item-data URI rejected by
+both old prefix guards. Shared strict parser and a 70-identity bounded survey
+are prepared; economics thresholds and source status remain unchanged.
+See [#67 evidence, limits and rollback](docs/csdeals-hardening-67.md).
+Final acceptance/economics and source decision require post-merge live proof
+recorded in #67/#42; do not interpret implementation as production promotion.
+
 ### #59 CS.Deals bounded read-only adapter — 2026-10-09
 
 Resumption inspected a clean main at `01581abb26e3228db9d371004c12c48e87acc607`:
