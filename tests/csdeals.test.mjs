@@ -4,11 +4,13 @@ import { csdealsUsd, csdealsName, normalizeCsDealsListing, normalizeCsDealsListi
   normalizeCsDealsAverages, normalizeCsDealsSales, csdealsPatientResale, createCsDealsClient } from '../backend/csdeals.mjs';
 import catalog from '../backend/csdeals-catalog.json' with { type: 'json' };
 import { applyEconomicScoring, applyScoring } from '../backend/scoring.mjs';
+import { validateCsDealsInspect } from '../backend/csdeals-inspect.mjs';
+import { surveyNames } from '../scripts/check-csdeals-hardening.mjs';
 const observedAt = '2026-10-09T10:00:00.000Z', now = Date.parse(observedAt);
 const name = 'MAC-10 | Sienna Damask (Field-Tested)';
 const listing = () => ({ id: 42, app_id: 730, market_hash_name: name, price: 1234, amount: 1,
   steam_asset_id: '123456789', created_at: '2026-09-01T00:00:00Z', trade_locked_until: null,
-  cs_paint_wear: .2, cs_paint_index: 101, cs_paint_seed: 5, cs_inspect_link: 'steam://rungame/730/test',
+  cs_paint_wear: .2, cs_paint_index: 101, cs_paint_seed: 5, cs_inspect_link: 'steam://rungame/730/76561202255233023/+csgo_econ_action_preview%20S76561198000000001A123456789D1234567890',
   cs_wear: 'Field-Tested', cs_rarity: 'Consumer Grade', cs_collection: 'The 2021 Mirage Collection',
   cs_is_stattrak: false, cs_is_souvenir: false });
 const avg = () => ({ window_days: 30, generated_at: observedAt, averages: [
@@ -20,6 +22,57 @@ const norm = r => normalizeCsDealsListing(r, { observedAt });
 const history = p => normalizeCsDealsSales(p, { observedAt, marketHashName: name });
 const average = p => normalizeCsDealsAverages(p, { observedAt })[0];
 const reference = (a = norm(listing()), b = average(avg()), c = history(sold()), time = now) => csdealsPatientResale(a,b,c,{now:time});
+
+// Synthetic matching item data; trailer deliberately opaque (not authenticated).
+function nativeListing() {
+  const r={...listing(),cs_paint_wear:Math.fround(.2)}, bytes=[0];
+  const varint=v=>{let n=BigInt(v);while(n>=128n){bytes.push(Number(n&127n)|128);n>>=7n;}bytes.push(Number(n));};
+  const f=Buffer.alloc(4);f.writeFloatLE(r.cs_paint_wear);
+  for(const [field,value] of [[2,r.steam_asset_id],[3,17],[4,r.cs_paint_index],[7,f.readUInt32LE()],[8,r.cs_paint_seed]]) {
+    varint(field*8);varint(value);
+  }
+  bytes.push(0,0,0,0);
+  r.cs_inspect_link='steam://run/730//+csgo_econ_action_preview%20'+Buffer.from(bytes.map(b=>b^0x6a)).toString('hex').toUpperCase();
+  return r;
+}
+
+test('native masked run URI matches asset/float/paint evidence and both adapter guards',()=>{
+  const r=nativeListing(), l=norm(r);
+  assert.equal(l.inspect_format,'NATIVE_MASKED_ITEM_DATA');
+  assert.equal(reference(l).status,'REFERENCE_ONLY');
+  for(const change of [{steam_asset_id:'999'},{cs_paint_wear:.21},{cs_paint_index:102},{cs_paint_seed:6}])
+    assert.throws(()=>norm({...r,...change}),/CSDEALS_INSPECT/);
+  assert.equal(reference({...l,inspect:l.inspect+';quit'}).status,'BLOCKED');
+  assert.equal(reference({...l,steam_asset_id:'999'}).status,'BLOCKED');
+});
+
+test('independent public native masked fixture decodes known item fields',()=>{
+  // Helyux/cs2inspect README at 6fe57cd824173d33994e57b45321913a4f22c66b.
+  const hex='6A7AC7C6BEDED06B72704ACE6F426F5A635296868780692AAC6C226A3A6A02E9EAEAEA661A625E7EE646';
+  const f=Buffer.alloc(4);f.writeUInt32LE(1029404284);
+  assert.equal(validateCsDealsInspect('steam://run/730//+csgo_econ_action_preview%20'+hex,
+    {assetId:'50039428653',exactFloat:f.readFloatLE(),paintIndex:676,paintSeed:838}),'NATIVE_MASKED_ITEM_DATA');
+});
+
+test('inspect fails closed for unknown launch forms, injection, malformed payloads and legacy mismatch',()=>{
+  const r=nativeListing(),u=r.cs_inspect_link;
+  const bad=[u+'\n',u+'\0',u+'?x=1',u+'#x',u+'%20quit',u+';quit',u+'F',u.replace('/730/','/570/'),
+    u.replace('steam:','https:'),u.replace('%20','%2520'),u.replace('run/','rungameid/'),
+    u.replace(/%20.*/,'%20FFFFFFFFFFFFFFFFFFFF'),u.replace(/%20.*/,'%20001001'),
+    'steam://rungame/730/test',listing().cs_inspect_link.replace('A123456789','A123456788'),
+    listing().cs_inspect_link.replace('S76561198000000001','S18446744073709551616')];
+  for(const uri of bad) assert.throws(()=>norm({...r,cs_inspect_link:uri}),/CSDEALS_INSPECT/);
+});
+
+test('bounded survey includes all 70 identity anchors and preserves variant/wear separation',()=>{
+  const names=surveyNames([],[]);
+  assert.equal(names.length,70);
+  assert.equal(new Set(names.map(n=>csdealsName(n).base_name)).size,70);
+  for(const n of names) assert.ok(catalog.items.some(r=>r.base_name===csdealsName(n).base_name));
+  const extra=Array.from({length:200},(_,i)=>({base_name:'not a catalog identity',market_hash_name:`extra-${i}`,sales:1}));
+  assert.equal(surveyNames(extra,[]).length,140);
+  assert.ok(names.every(n=>surveyNames(extra,[]).includes(n)));
+});
 
 test('cents normalization rejects null, strings, fractional and invalid money', () => {
   assert.equal(csdealsUsd(1234), 12.34); assert.equal(csdealsUsd(0), 0);

@@ -1,5 +1,6 @@
 import catalog from './csdeals-catalog.json' with { type: 'json' };
 import { resolveCollection } from './collection-registry.mjs';
+import { validateCsDealsInspect } from './csdeals-inspect.mjs';
 
 export const CSDEALS_VERSION = 'CSDEALS_READ_ONLY_V1';
 export const CSDEALS_GUARDS = Object.freeze({ minSales: 5, minVolume: 5, minSample: 3,
@@ -58,12 +59,13 @@ export function normalizeCsDealsListing(r, { observedAt } = {}) {
   if (r.cs_wear !== identity.wear) fail('WEAR');
   const f = r.cs_paint_wear, [lo, hi] = wearBounds[wears.indexOf(identity.wear)];
   if (typeof f !== 'number' || !Number.isFinite(f) || f < identity.float_min || f > identity.float_max || f < lo || f >= hi) fail('FLOAT');
-  if (!str(r.cs_inspect_link) || !r.cs_inspect_link.startsWith('steam://rungame/730/')) fail('INSPECT');
+  const inspect_format = validateCsDealsInspect(r.cs_inspect_link, { assetId: r.steam_asset_id,
+    exactFloat: f, paintIndex: r.cs_paint_index, paintSeed: r.cs_paint_seed });
   const created_at = stamp(r.created_at);
   if (Date.parse(created_at) > Date.parse(observed_at)) fail('FUTURE_LISTING');
   const trade_locked_until = r.trade_locked_until == null ? null : stamp(r.trade_locked_until);
   return Object.freeze({ ...source(), ...identity, ...money(r.price), source_listing_id: String(r.id),
-    steam_asset_id: r.steam_asset_id, exact_float: f, inspect: r.cs_inspect_link,
+    steam_asset_id: r.steam_asset_id, exact_float: f, inspect: r.cs_inspect_link, inspect_format,
     cs_collection: r.cs_collection, cs_rarity: r.cs_rarity, cs_wear: r.cs_wear,
     paint_index: integer(r.cs_paint_index) ? r.cs_paint_index : null,
     paint_seed: integer(r.cs_paint_seed) ? r.cs_paint_seed : null,
@@ -151,8 +153,9 @@ export function csdealsPatientResale(ask, average, sample, { now = Date.now() } 
     const [lo, hi] = wearBounds[wears.indexOf(identity.wear)];
     if (ask.exact_float < identity.float_min || ask.exact_float > identity.float_max ||
         ask.exact_float < lo || ask.exact_float >= hi || ask.wear !== identity.wear ||
-        !ask.inspect.startsWith('steam://rungame/730/') ||
         !average.confidence_flags?.includes('SALES_EXECUTED') || sample.sales.length > 100) fail('EVIDENCE_INVALID');
+    validateCsDealsInspect(ask.inspect, { assetId: ask.steam_asset_id, exactFloat: ask.exact_float,
+      paintIndex: ask.paint_index, paintSeed: ask.paint_seed });
     for (const sale of sample.sales) {
       if (!positive(sale.amount) || !sale.confidence_flags?.includes('SALES_EXECUTED') ||
           Date.parse(stamp(sale.sold_at)) > now || !fresh(sale.observed_at, 180)) fail('SALE_EVIDENCE');
