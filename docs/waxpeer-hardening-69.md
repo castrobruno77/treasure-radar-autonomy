@@ -13,8 +13,10 @@ Missing rows in this prefix do not establish market absence.
 
 With the explicitly authorized existing WAXPEER_API_KEY supplied by Railway
 reference to scale-runtime-market, it reads at most eight diverse exact P0 titles,
-one page of 100 float items and one page of active orders for each. Public listing
-price bounds narrow the float lookup. Joins require item_id, exact name, price,
+one page of 100 float items and one page of active orders for each. No price
+filter is sent: equal price bounds returned empty pages in the first live probe.
+Every returned exact-name item is checked against the public prefix by ID.
+Joins require item_id, exact name, price,
 numeric float in canonical and exterior bounds, and <=180s observed skew.
 Missing joins and pagination flags are retained; no completeness inference.
 

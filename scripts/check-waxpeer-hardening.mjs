@@ -19,11 +19,15 @@ export function catalogNames(items) {
   return names;
 }
 
+export function observedInteger(value) {
+  if (!(typeof value === 'number' || typeof value === 'string' && /^\d+$/.test(value))) return null;
+  const n=Number(value); return Number.isSafeInteger(n)&&n>=0?n:null;
+}
 export function floatJoin(ask, row, identity, observedAt) {
   const f = row?.float;
   return !!identity && typeof f === 'number' && Number.isFinite(f) &&
     f >= identity.float_min && f <= identity.float_max && f >= identity.lo && f < identity.hi &&
-    row.item_id === ask.item_id && row.name === ask.market_hash_name && row.price === ask.raw_price &&
+    row.item_id === ask.item_id && row.name === ask.market_hash_name && observedInteger(row.price) === ask.raw_price &&
     Date.parse(observedAt) >= Date.parse(ask.observed_at) && Date.parse(observedAt)-Date.parse(ask.observed_at) <= 180000;
 }
 
@@ -100,24 +104,24 @@ export async function runProbe({env=process.env, fetcher=fetch, pause=wait, now=
     if(!env.WAXPEER_API_KEY){report.status='PUBLIC_ONLY';return report;}
     for(const ask of selected){
       const sample={name:ask.market_hash_name,collection:ask.collection_id,rarity:ask.rarity,variant:ask.variant};report.samples.push(sample);
-      const fr=await read('/v2/get-items-list',{game:'csgo',search:ask.market_hash_name,limit:'100',include_hold:'1',
-        ...(ask.item_id?{min_price:String(ask.raw_price),max_price:String(ask.raw_price)}:{})},true);
+      const fr=await read('/v2/get-items-list',{game:'csgo',search:ask.market_hash_name,limit:'100',include_hold:'1'},true);
       if(!Array.isArray(fr.body.items)||fr.body.items.length>100)throw Error('FLOAT_SCHEMA');
       const exact=fr.body.items.filter(x=>x.name===ask.market_hash_name), identity=names.get(ask.market_hash_name);
-      const joined=exact.filter(x=>floatJoin(ask,x,identity,fr.observedAt));
+      const publicById=new Map(p0.filter(x=>x.market_hash_name===ask.market_hash_name).map(x=>[x.item_id,x]));
+      const joined=exact.filter(x=>publicById.has(x.item_id)&&floatJoin(publicById.get(x.item_id),x,identity,fr.observedAt));
       sample.float_rows=exact.length;sample.float_page_has_more=fr.body.has_more===true;sample.float_source_timestamp=null;
       sample.float_observed_at=fr.observedAt;sample.public_join_count=joined.length;
-      sample.joined=joined.map(x=>({item_id:x.item_id,price:x.price,float:x.float,public_observed_at:ask.observed_at,
-        inspect_present:!!ask.inspect,delivery:ask.delivery,unlock_at:ask.unlock_at,send_until:ask.send_until}));
+      sample.joined=joined.map(x=>{const p=publicById.get(x.item_id);return {item_id:x.item_id,price:observedInteger(x.price),float:x.float,public_observed_at:p.observed_at,
+        inspect_present:!!p.inspect,delivery:p.delivery,unlock_at:p.unlock_at,send_until:p.send_until};});
       sample.float_examples=exact.filter(x=>typeof x.float==='number'&&Number.isFinite(x.float)).slice(0,2).map(x=>({
-        item_id:/^\d{1,30}$/.test(x.item_id)?x.item_id:null,name:ask.market_hash_name,price:Number.isSafeInteger(x.price)?x.price:null,float:x.float,
+        item_id:/^\d{1,30}$/.test(x.item_id)?x.item_id:null,name:ask.market_hash_name,price:observedInteger(x.price),float:x.float,
         in_catalog_bounds:x.float>=identity.float_min&&x.float<=identity.float_max&&x.float>=identity.lo&&x.float<identity.hi}));
       const or=await read('/v1/buy-orders',{game:'csgo',name:ask.market_hash_name,skip:'0'},true);
       if(!Array.isArray(or.body.offers)||or.body.offers.length>100)throw Error('ORDER_SCHEMA');
       const orders=or.body.offers.filter(x=>x.name===ask.market_hash_name);
       sample.order_rows=orders.length;sample.order_observed_at=or.observedAt;sample.order_source_timestamp=null;
-      sample.orders=orders.slice(0,5).map(x=>({price:Number.isSafeInteger(x.price)?x.price:null,
-        amount:Number.isSafeInteger(x.amount)?x.amount:null,filled:Number.isSafeInteger(x.filled)?x.filled:null}));
+      sample.orders=orders.slice(0,5).map(x=>({price:observedInteger(x.price),price_type:typeof x.price,
+        amount:observedInteger(x.amount),filled:observedInteger(x.filled)}));
       sample.public_bid_raw=byName.get(ask.market_hash_name)?.raw_price??null;
       sample.timing=waxpeerTiming(ask,byName.get(ask.market_hash_name),now());
       sample.remaining_executable_quantity=null;
