@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {catalogNames,floatJoin,runProbe} from '../scripts/check-waxpeer-hardening.mjs';
+import {catalogNames,floatJoin,runProbe,observedInteger} from '../scripts/check-waxpeer-hardening.mjs';
+test('observed integer strings remain exact; missing, fractional and unsafe fields stay unknown',()=>{
+  assert.equal(observedInteger('0014077'),14077);
+  for(const v of [null,undefined,'',true,'1.5','-1','9007199254740992'])assert.equal(observedInteger(v),null);
+});
 test('diagnostic keeps exact names, allowed variants and float boundaries',()=>{
   const row={base_name:'Test | Finish',float_min:.07,float_max:.15,normal_allowed:true,souvenir_allowed:false};
   const names=catalogNames([row]);
