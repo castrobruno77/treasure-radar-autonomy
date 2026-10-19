@@ -49,7 +49,7 @@ test('changed control is inconclusive instead of claiming incompatible filters',
 });
 test('schema and identity rejection remain observable without arbitrary data disclosure', async () => {
   for (const mutate of [r => r.attributes.cs2.category = 'CATEGORY_STATTRAK', r => r.attributes.cs2.collection = 'PRIVATE_DATA',
-    r => r.attributes.cs2.float = null, r => r.attributes.title = 'PRIVATE_DATA', r => r.attributes.cs2.quality = null]) {
+    r => r.attributes.cs2.float = null, r => r.attributes.name = 'PRIVATE_DATA', r => r.attributes.cs2.quality = null]) {
     const report = await run({ ...opts, fetcher: async url => { const r = row(url); mutate(r); return Response.json({ items: [r] }); } });
     assert.equal(report.calls, 2);
     assert.ok(report.cells.every(c => c.finding === 'ROWS_PRESENT_IDENTITY_CONTRACT_REJECTED'));
