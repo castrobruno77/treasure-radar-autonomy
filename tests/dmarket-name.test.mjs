@@ -18,7 +18,7 @@ test('safe signals distinguish NAME, TITLE, BOTH and NONE without echoing values
     assert.ok(!JSON.stringify(s).includes('PRIVATE_'));
   }
 });
-test('exact title signal mirrors unchanged validator for every wear and rejects deceptive prefixes', () => {
+test('title diagnostic remains observational while validator uses exact name and float', () => {
   const pairs = [['Factory New', '.06'], ['Minimal Wear', '.075'], ['Field-Tested', '.2'], ['Well-Worn', '.4'], ['Battle-Scarred', '.5']];
   for (const [wear, value] of pairs) {
     const r = row(base, `${base} (${wear})`); r.attributes.cs2.float = `0${value}`;
@@ -29,7 +29,7 @@ test('exact title signal mirrors unchanged validator for every wear and rejects 
     `StatTrak™ ${base} (Minimal Wear)`, `Souvenir ${base} (Minimal Wear)`, base.toLowerCase()]) {
     const r = row(base, title);
     assert.equal(exactNameSignals(r, base).exact_name_component, 'TITLE');
-    assert.throws(() => observeP0Identity(r, cell, item, 'NORMAL'), /EXACT_NAME/);
+    assert.equal(observeP0Identity(r, cell, item, 'NORMAL').market_hash_name, `${base} (Minimal Wear)`);
   }
   assert.equal(exactNameSignals(row(base, base + ' extra'), base).title_starts_with_base, true);
 });

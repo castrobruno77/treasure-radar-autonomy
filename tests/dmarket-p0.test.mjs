@@ -32,7 +32,6 @@ test('identity rejects generation/variant/collection/name/float mismatches and a
   for (const change of [
     r => r.attributes.cs2.collection = 'the mirage collection',
     r => r.attributes.cs2.category = 'CATEGORY_STATTRAK',
-    r => r.attributes.title = r.attributes.title.replace('MAC-10', 'MAC-10 fake'),
     r => r.attributes.name = 'Sienna Damask',
     r => r.attributes.cs2.float = null,
     r => r.attributes.cs2.float = '0.9',
@@ -43,6 +42,75 @@ test('identity rejects generation/variant/collection/name/float mismatches and a
   }
   const norse = P0_CELLS.find(c => c.collection_id === 'norse');
   assert.throws(() => observeP0Identity(offer(norse, 'SOUVENIR'), norse, norse.items[0], 'SOUVENIR'), /SCOPE/);
+});
+test('arbitrary or missing title cannot change canonical identity or certify rarity', () => {
+  const cell = P0_CELLS[0], item = cell.items[0];
+  for (const variant of ['NORMAL', 'SOUVENIR']) {
+    const expected = observeP0Identity(offer(cell, variant), cell, item, variant);
+    assert.equal(expected.market_hash_name, `${variant === 'SOUVENIR' ? 'Souvenir ' : ''}${item.base_name} (Minimal Wear)`);
+    assert.equal(expected.rarity_status, 'OBSERVED_NOT_CERTIFIED');
+    assert.equal(expected.production_activated, false);
+    for (const title of ['arbitrary', `${item.base_name} (Factory New)`, 'StatTrak™ fake', '', null, 12, {}, undefined]) {
+      const r = offer(cell, variant);
+      if (title === undefined) delete r.attributes.title;
+      else r.attributes.title = title;
+      assert.deepEqual(observeP0Identity(r, cell, item, variant), expected);
+    }
+    const r = offer(cell, variant);
+    Object.defineProperty(r.attributes, 'title', { get() { assert.fail('title must not be read'); } });
+    assert.deepEqual(observeP0Identity(r, cell, item, variant), expected);
+  }
+});
+test('canonical wear boundaries use exact float for both variants, including endpoints', () => {
+  for (const [f, wear] of [[0, 'Factory New'], [.069999999, 'Factory New'], [.07, 'Minimal Wear'],
+    [.149999999, 'Minimal Wear'], [.15, 'Field-Tested'], [.379999999, 'Field-Tested'],
+    [.38, 'Well-Worn'], [.449999999, 'Well-Worn'], [.45, 'Battle-Scarred'], [1, 'Battle-Scarred']]) {
+    // No souvenir-eligible catalog item reaches 1; its item-range guard must reject it.
+    for (const variant of f === 1 ? ['NORMAL'] : ['NORMAL', 'SOUVENIR']) for (const value of [f, String(f)]) {
+      const cell = P0_CELLS.find(c => c.variants.includes(variant) && c.items.some(i => i.float_min <= f && i.float_max >= f));
+      assert.ok(cell, `catalog covers ${variant} float ${f}`);
+      const item = cell.items.find(i => i.float_min <= f && i.float_max >= f);
+      const r = offer(cell, variant); r.attributes.name = item.base_name; r.attributes.cs2.float = value;
+      assert.equal(observeP0Identity(r, cell, item, variant).market_hash_name,
+        `${variant === 'SOUVENIR' ? 'Souvenir ' : ''}${item.base_name} (${wear})`);
+    }
+  }
+});
+test('all strong identity and listing guards remain fail-closed without title', () => {
+  const cell = P0_CELLS[0], item = cell.items[0];
+  const cases = [
+    ...['wrong', '', null, undefined, `StatTrak™ ${item.base_name}`, `Souvenir ${item.base_name}`].map(v => ['EXACT_NAME', r => r.attributes.name = v]),
+    ...[null, '', 'the mirage collection', cell.source_collection.toUpperCase()].map(v => ['COLLECTION', r => r.attributes.cs2.collection = v]),
+    ...[null, '', 'CATEGORY_STATTRAK', 'CATEGORY_SOUVENIR'].map(v => ['CATEGORY', r => r.attributes.cs2.category = v]),
+    ...[null, undefined, '', ' ', '.07', 'NaN', 'Infinity', '0.1x', true, {}, NaN, Infinity, -Infinity, -.01, 1.00000001, item.float_max + .000001].map(v => ['FLOAT', r => r.attributes.cs2.float = v]),
+    ...[null, '', 42, {}, 'QUALITY_123'].map(v => ['QUALITY_MISSING', r => r.attributes.cs2.quality = v]),
+    ...[null, '', 12, 'bad/id', 'x'.repeat(129)].map(v => ['LISTING', r => r.offerId = v]),
+    ...[null, '', 0, -1, 1.5, '1.5', 'NaN', Infinity, Number.MAX_SAFE_INTEGER + 1].map(v => ['LISTING', r => r.priceCents = v])
+  ];
+  for (const [code, change] of cases) {
+    const r = offer(cell); delete r.attributes.title; change(r);
+    assert.throws(() => observeP0Identity(r, cell, item, 'NORMAL'), { message: `DMARKET_P0_${code}` });
+  }
+  for (const variant of ['STATTRAK', 'normal', '', null])
+    assert.throws(() => observeP0Identity(offer(cell), cell, item, variant), /SCOPE/);
+  assert.throws(() => observeP0Identity(offer(cell), { ...cell }, item, 'NORMAL'), /SCOPE/);
+  assert.throws(() => observeP0Identity(offer(cell), cell, { ...item }, 'NORMAL'), /SCOPE/);
+  for (const c of P0_CELLS) {
+    if (!c.variants.includes('SOUVENIR'))
+      assert.throws(() => observeP0Identity(offer(c, 'SOUVENIR'), c, c.items[0], 'SOUVENIR'), /SCOPE/);
+    else {
+      const r = offer(c, 'SOUVENIR'); r.attributes.cs2.float = 1;
+      assert.throws(() => observeP0Identity(r, c, c.items[0], 'SOUVENIR'), /FLOAT/);
+      r.attributes.cs2.float = .075; r.attributes.cs2.category = 'CATEGORY_NORMAL';
+      assert.throws(() => observeP0Identity(r, c, c.items[0], 'SOUVENIR'), /CATEGORY/);
+    }
+    for (const i of c.items) for (const f of [i.float_min, i.float_max, i.float_min - .000001, i.float_max + .000001]) {
+      const r = offer(c); r.attributes.name = i.base_name; r.attributes.cs2.float = f;
+      if (f < i.float_min || f > i.float_max)
+        assert.throws(() => observeP0Identity(r, c, i, 'NORMAL'), /FLOAT/);
+      else assert.doesNotThrow(() => observeP0Identity(r, c, i, 'NORMAL'));
+    }
+  }
 });
 test('probe visits every allowed scope, signs only GET offers and never dumps raw data', async () => {
   let calls = 0;
