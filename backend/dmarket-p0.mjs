@@ -22,6 +22,14 @@ const wears = new Map([
 ]);
 const fail = code => { throw Error(`DMARKET_P0_${code}`); };
 
+// Sorted multiset: keep years, unknown words and duplicates; no substring aliases.
+export function p0CollectionKey(value) {
+  if (typeof value !== 'string') return null;
+  const tokens = (value.toLowerCase().match(/[a-z0-9]+/g) ?? [])
+    .filter(token => token !== 'the' && token !== 'collection').sort();
+  return tokens.length ? JSON.stringify(tokens) : null;
+}
+
 // This is a provenance observation, NOT a rarity-certified production listing.
 // #64 requires observed low-tier enum literals before activation. Do not guess them.
 export function observeP0Identity(offer, cell, item, variant) {
@@ -29,7 +37,7 @@ export function observeP0Identity(offer, cell, item, variant) {
   const attrs = offer?.attributes, cs = attrs?.cs2;
   const prefix = variant === 'SOUVENIR' ? 'Souvenir ' : '';
   if (attrs?.name !== item.base_name) fail('EXACT_NAME');
-  if (cs?.collection !== cell.source_collection) fail('COLLECTION');
+  if (p0CollectionKey(cs?.collection) !== p0CollectionKey(cell.source_collection)) fail('COLLECTION');
   if (cs.category !== `CATEGORY_${variant}`) fail('CATEGORY');
   if (typeof cs.quality !== 'string' || !/^[A-Za-z_ ]{1,64}$/.test(cs.quality)) fail('QUALITY_MISSING');
   if (!(typeof cs.float === 'number' || typeof cs.float === 'string' && /^(?:0|1)(?:\.\d+)?$/.test(cs.float))) fail('FLOAT');
