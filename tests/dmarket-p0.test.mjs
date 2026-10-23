@@ -80,7 +80,7 @@ test('all strong identity and listing guards remain fail-closed without title', 
   const cell = P0_CELLS[0], item = cell.items[0];
   const cases = [
     ...['wrong', '', null, undefined, `StatTrak™ ${item.base_name}`, `Souvenir ${item.base_name}`].map(v => ['EXACT_NAME', r => r.attributes.name = v]),
-    ...[null, '', 'the mirage collection', cell.source_collection.toUpperCase()].map(v => ['COLLECTION', r => r.attributes.cs2.collection = v]),
+    ...[null, '', 'the mirage collection', `${cell.source_collection} extra`].map(v => ['COLLECTION', r => r.attributes.cs2.collection = v]),
     ...[null, '', 'CATEGORY_STATTRAK', 'CATEGORY_SOUVENIR'].map(v => ['CATEGORY', r => r.attributes.cs2.category = v]),
     ...[null, undefined, '', ' ', '.07', 'NaN', 'Infinity', '0.1x', true, {}, NaN, Infinity, -Infinity, -.01, 1.00000001, item.float_max + .000001].map(v => ['FLOAT', r => r.attributes.cs2.float = v]),
     ...[null, '', 42, {}, 'QUALITY_123'].map(v => ['QUALITY_MISSING', r => r.attributes.cs2.quality = v]),
@@ -88,7 +88,8 @@ test('all strong identity and listing guards remain fail-closed without title', 
     ...[null, '', 0, -1, 1.5, '1.5', 'NaN', Infinity, Number.MAX_SAFE_INTEGER + 1].map(v => ['LISTING', r => r.priceCents = v])
   ];
   for (const [code, change] of cases) {
-    const r = offer(cell); delete r.attributes.title; change(r);
+    const r = offer(cell); delete r.attributes.title;
+    r.attributes.cs2.collection = 'Mirage 2021'; change(r);
     assert.throws(() => observeP0Identity(r, cell, item, 'NORMAL'), { message: `DMARKET_P0_${code}` });
   }
   for (const variant of ['STATTRAK', 'normal', '', null])

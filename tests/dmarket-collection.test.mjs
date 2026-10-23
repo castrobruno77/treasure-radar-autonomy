@@ -68,12 +68,13 @@ test('mixed patterns and incomplete samples cannot claim all five agree', async 
   }
 });
 
-test('diagnostic comparisons never relax COLLECTION or other guards', async () => {
+test('token-equivalent collections pass identity without relaxing other guards', async () => {
   for (const value of [expected.toUpperCase(),` ${expected} `,expected.replaceAll(' ','-'),'Mirage 2021']) {
     const r=row(value);
-    assert.throws(()=>observeP0Identity(r,cell,item,'NORMAL'),/DMARKET_P0_COLLECTION/);
+    assert.equal(observeP0Identity(r,cell,item,'NORMAL').source_collection,value);
     const report=await run({...opts,fetcher:async()=>Response.json({items:[r]})});
-    assert.deepEqual(report.cells[0].requests[0].rejections,{DMARKET_P0_COLLECTION:1});
+    assert.deepEqual(report.cells[0].requests[0].rejections,{});
+    assert.equal(report.cells[0].requests[0].strict_identity_pass_count,1);
     assert.equal(r.attributes.cs2.collection,value);
   }
   for (const [mutate,code] of [
@@ -83,7 +84,7 @@ test('diagnostic comparisons never relax COLLECTION or other guards', async () =
     [r=>r.attributes.cs2.float=null,'FLOAT'],
     [r=>r.offerId=null,'LISTING']
   ]) {
-    const r=row(); mutate(r);
+    const r=row('Mirage 2021'); mutate(r);
     const report=await run({...opts,fetcher:async()=>Response.json({items:[r]})});
     assert.deepEqual(report.cells[0].requests[0].rejections,{[`DMARKET_P0_${code}`]:1});
   }
